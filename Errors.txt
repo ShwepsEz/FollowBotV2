@@ -1,0 +1,5 @@
+Build failed:
+[10.08.2026 2:25:31, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\SkillUsageService.cs(112, 41)] CS0103: Имя "_lastBannerUseTime" не существует в текущем контексте.
+[10.08.2026 2:25:31, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\SkillUsageService.cs(112, 81)] CS0103: Имя "BANNER_COOLDOWN_MS" не существует в текущем контексте.
+[10.08.2026 2:25:31, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\SkillUsageService.cs(131, 21)] CS0103: Имя "_lastBannerUseTime" не существует в текущем контексте.
+[10.08.2026 2:25:31, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\SkillUsageService.cs(132, 73)] CS0103: Имя "BANNER_COOLDOWN_MS" не существует в текущем контексте.
