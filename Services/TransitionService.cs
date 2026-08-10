@@ -30,13 +30,13 @@ namespace FollowBotV2.Services
 
         private DateTime _lastTransitionClickTime = DateTime.MinValue;
         private int _transitionClickAttempts = 0;
-        private const int MAX_TRANSITION_CLICK_ATTEMPTS = 10;
-        private const int TRANSITION_CLICK_RETRY_INTERVAL_MS = 500;
+        private const int MAX_TRANSITION_CLICK_ATTEMPTS = 15;
+        private const int TRANSITION_CLICK_RETRY_INTERVAL_MS = 250;
 
         private Entity _currentPortal = null;
         private DateTime _lastClickTime = DateTime.MinValue;
         private int _clickAttempts = 0;
-        private const int MAX_CLICK_ATTEMPTS = 5;
+        private const int MAX_CLICK_ATTEMPTS = 15;
         private const int CLICK_RETRY_INTERVAL_MS = 250;
 
         public TransitionService(IGameContext gameContext, ILogService log, FollowerSettings settings,
