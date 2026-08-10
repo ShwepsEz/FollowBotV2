@@ -138,6 +138,17 @@ namespace FollowBotV2.Core
                 return;
             }
 
+            // ★★★ Если мы в кулдауне и время вышло — переключаемся обратно в Following ★★★
+            if (_state == FollowerState.Cooldown && DateTime.Now >= _cooldownUntil)
+            {
+                SetState(FollowerState.Following);
+                _log.Debug("Cooldown expired, resuming following.");
+            }
+
+            // Если кулдаун ещё активен — ничего не делаем
+            if (_state == FollowerState.Cooldown)
+                return;
+
             if ((DateTime.Now - _lastLeaderCheck).TotalMilliseconds < Settings.ImGui.LeaderCheckIntervalMs.Value)
                 return;
             _lastLeaderCheck = DateTime.Now;
@@ -150,7 +161,8 @@ namespace FollowBotV2.Core
                     _log.Info($"Leader '{leaderName}' left party.");
                     _lastLeaderFound = false;
                 }
-                SetState(FollowerState.Stopped);
+                // Не сбрасываем состояние, просто останавливаем движение
+                _navigationService?.Stop();
                 return;
             }
 
@@ -194,8 +206,7 @@ namespace FollowBotV2.Core
                 case FollowerState.Portaling:
                     HandlePortalingState(leaderName);
                     break;
-                case FollowerState.Cooldown:
-                    break;
+                    // Cooldown уже обработан выше
             }
 
             if (_state == FollowerState.Following || _state == FollowerState.WaitingForPath)
@@ -361,7 +372,9 @@ namespace FollowBotV2.Core
             _navigationService?.LoadWalkabilityData();
             _navigationService?.Stop();
             _skillService?.RefreshKeybindings();
-            SetState(FollowerState.Following);
+            // Если бот был в состоянии Following, продолжаем следовать, иначе оставляем как есть
+            if (_state != FollowerState.Stopped)
+                SetState(FollowerState.Following);
         }
 
         public override void DrawSettings()
