@@ -23,6 +23,10 @@ namespace FollowBotV2.Services
         private readonly IPartyService _partyService;
         private readonly FollowerCore _core;
 
+        private DateTime _lastDebugLog = DateTime.MinValue;
+        private DateTime _lastSkillBarLog = DateTime.MinValue;
+        private const int SKILLBAR_LOG_INTERVAL_MS = 1000;
+
         private DateTime _lastBannerUseTime = DateTime.MinValue;
         private const int BANNER_COOLDOWN_MS = 500;
 
@@ -56,9 +60,44 @@ namespace FollowBotV2.Services
             var player = _gameContext.Player;
             if (player == null) return;
 
+            // ★★★ Логирование активных баффов (DebugSkills) ★★★
+            if (_settings.DebugSkills.Value)
+            {
+                if ((DateTime.Now - _lastDebugLog).TotalSeconds >= 1)
+                {
+                    _lastDebugLog = DateTime.Now;
+                    try
+                    {
+                        var buffs = player.Buffs;
+                        if (buffs != null && buffs.Count > 0)
+                        {
+                            _log.Info($"=== Active buffs ({buffs.Count}) ===");
+                            foreach (var buff in buffs)
+                                if (buff.Name != null)
+                                    _log.Info($"  - {buff.Name}");
+                        }
+                        else
+                            _log.Info("No active buffs found.");
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error($"Error reading buffs: {ex.Message}");
+                    }
+                }
+            }
+
+            // ★★★ Получение списка скилов ★★★
             var skills = _skillService.GetSkills();
             if (skills.Count == 0) return;
 
+            // ★★★ Логирование скилл-бара (DebugSkillBar) ★★★
+            if (_settings.DebugSkillBar.Value && (DateTime.Now - _lastSkillBarLog).TotalMilliseconds >= SKILLBAR_LOG_INTERVAL_MS)
+            {
+                _lastSkillBarLog = DateTime.Now;
+                _skillService.LogCurrentSkills();
+            }
+
+            // ★★★ Основной цикл по скилам ★★★
             foreach (var skillInfo in skills)
             {
                 if (!_settings.SkillSettings.TryGetValue(skillInfo.SlotIndex, out var settings))
@@ -110,7 +149,7 @@ namespace FollowBotV2.Services
                     return timeLeft <= 0.5f;
 
                 case UseCondition.NearbyEnemies:
-                    int enemyCount = GetNearbyEnemyCount();
+                    int enemyCount = GetNearbyEnemyCount(settings.NearbyEnemyRadius);
                     return enemyCount >= settings.NearbyEnemyThreshold;
 
                 case UseCondition.ValourThreshold:
@@ -224,7 +263,7 @@ namespace FollowBotV2.Services
             return 0f;
         }
 
-        private int GetNearbyEnemyCount()
+        private int GetNearbyEnemyCount(int radius)
         {
             try
             {
@@ -242,7 +281,7 @@ namespace FollowBotV2.Services
                         new SharpDX.Vector2(e.GridPosNum.X, e.GridPosNum.Y),
                         new SharpDX.Vector2(playerPos.Value.X, playerPos.Value.Y)
                     );
-                    if (dist <= 50)
+                    if (dist <= radius)
                         count++;
                 }
                 return count;

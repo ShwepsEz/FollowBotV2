@@ -163,5 +163,36 @@ namespace FollowBotV2.Services
 
             return result;
         }
+
+        public void LogCurrentSkills()
+        {
+            try
+            {
+                var skills = GetSkills();
+                if (skills.Count == 0)
+                {
+                    _log.Info("[SkillBar] No skills on skill bar.");
+                    return;
+                }
+
+                _log.Info($"[SkillBar] === {skills.Count} skills on skill bar ===");
+                foreach (var skill in skills)
+                {
+                    string keyDisplay = skill.Key switch
+                    {
+                        Keys.LButton => "LMB",
+                        Keys.RButton => "RMB",
+                        Keys.MButton => "MMB",
+                        Keys.None => "None",
+                        _ => skill.Key.ToString()
+                    };
+                    _log.Info($"[SkillBar] Slot {skill.SlotIndex + 1}: {skill.Name} (Key: {keyDisplay}) Internal: {skill.InternalName}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error($"Error logging skill bar: {ex.Message}");
+            }
+        }
     }
 }

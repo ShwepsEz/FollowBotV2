@@ -28,6 +28,7 @@ namespace FollowBotV2.Config
         public SkillTarget Target { get; set; } = SkillTarget.Self;
         public UseCondition Condition { get; set; } = UseCondition.Always;
         public int NearbyEnemyThreshold { get; set; } = 3;
+        public int NearbyEnemyRadius { get; set; } = 50;
         public int ValourThresholdValue { get; set; } = 105;
     }
 
@@ -43,6 +44,7 @@ namespace FollowBotV2.Config
         [Menu("Enable")]
         public ToggleNode Enable { get; set; }
 
+        public ToggleNode DebugSkillBar { get; set; } = new ToggleNode(false);
         public ToggleNode DrawTransitions { get; set; } = new ToggleNode(false);
         public RangeNode<float> MaxLookAheadPixels { get; set; } = new RangeNode<float>(350, 100, 600);
         public RangeNode<float> MinLookAheadPixels { get; set; } = new RangeNode<float>(80, 30, 200);

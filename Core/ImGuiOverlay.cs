@@ -247,6 +247,10 @@ namespace FollowBotV2.Core
             }
             ImGui.Separator();
 
+            bool debugSkillBar = _settings.DebugSkillBar.Value;
+            if (ImGui.Checkbox("Debug Skill Bar (show skills in slots)", ref debugSkillBar))
+                _settings.DebugSkillBar.Value = debugSkillBar;
+
             var skills = _skillService.GetSkills();
             if (skills.Count == 0)
             {
@@ -276,7 +280,7 @@ namespace FollowBotV2.Core
                 string status = "";
                 if (skillConfig.Enabled) status += "[Enabled] ";
                 if (skillConfig.Condition == UseCondition.BuffMissing) status += "[Buff] ";
-                if (skillConfig.Condition == UseCondition.NearbyEnemies) status += $"[{skillConfig.NearbyEnemyThreshold}+ enemies] ";
+                if (skillConfig.Condition == UseCondition.NearbyEnemies) status += $"[{skillConfig.NearbyEnemyThreshold}+ enemies, radius {skillConfig.NearbyEnemyRadius}] ";
                 if (skillConfig.Condition == UseCondition.ValourThreshold) status += $"[Valour ≥ {skillConfig.ValourThresholdValue}] ";
                 status += $"(Target: {skillConfig.Target})";
 
@@ -296,14 +300,20 @@ namespace FollowBotV2.Core
                     if (ImGui.Combo("Use Condition", ref conditionIndex, conditionNames, conditionNames.Length))
                         skillConfig.Condition = (UseCondition)conditionIndex;
 
+                    // ★★★ ЕДИНСТВЕННЫЙ БЛОК ДЛЯ NEARBYENEMIES ★★★
                     if (skillConfig.Condition == UseCondition.NearbyEnemies)
                     {
                         int threshold = skillConfig.NearbyEnemyThreshold;
                         if (ImGui.SliderInt("Enemy Count Threshold", ref threshold, 1, 20))
                             skillConfig.NearbyEnemyThreshold = threshold;
+
+                        int radius = skillConfig.NearbyEnemyRadius;
+                        if (ImGui.SliderInt("Search Radius (grid)", ref radius, 10, 150))
+                            skillConfig.NearbyEnemyRadius = radius;
+                        ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Radius to search for nearby enemies");
                     }
 
-                    // ★★★ НОВЫЙ БЛОК ★★★
+                    // ★★★ БЛОК ДЛЯ VALOURTHRESHOLD ★★★
                     if (skillConfig.Condition == UseCondition.ValourThreshold)
                     {
                         bool isBanner = skill.Name.Contains("Banner", StringComparison.OrdinalIgnoreCase);

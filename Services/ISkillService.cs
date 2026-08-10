@@ -7,5 +7,6 @@ namespace FollowBotV2.Services
     {
         IReadOnlyList<SkillInfo> GetSkills();
         void RefreshKeybindings();
+        void LogCurrentSkills();
     }
 }
