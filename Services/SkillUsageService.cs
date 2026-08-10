@@ -30,9 +30,8 @@ namespace FollowBotV2.Services
         private DateTime _lastBannerUseTime = DateTime.MinValue;
         private const int BANNER_COOLDOWN_MS = 500;
 
-        // ★★★ НОВЫЕ ПОЛЯ ДЛЯ ЗАДЕРЖКИ BUFF-СКИЛОВ ★★★
         private DateTime _lastBuffSkillUseTime = DateTime.MinValue;
-        private const int BUFF_SKILL_COOLDOWN_MS = 250;
+        private const int BUFF_SKILL_COOLDOWN_MS = 400;
 
         public SkillUsageService(IGameContext gameContext, ILogService log, ISkillService skillService,
                                  FollowerSettings settings, IInputService inputService,
@@ -127,7 +126,7 @@ namespace FollowBotV2.Services
                         continue;
                 }
 
-                // ★★★ Задержка для скилов с условием BuffMissing ★★★
+                // Задержка для скилов с условием BuffMissing
                 if (settings.Condition == UseCondition.BuffMissing)
                 {
                     if ((DateTime.Now - _lastBuffSkillUseTime).TotalMilliseconds < BUFF_SKILL_COOLDOWN_MS)
@@ -217,7 +216,8 @@ namespace FollowBotV2.Services
             {
                 if (skillInfo.Key == Keys.None) return;
 
-                if (target == SkillTarget.Leader && targetPos != SharpDX.Vector2.Zero)
+                // Наведение мыши для Leader и Enemy
+                if ((target == SkillTarget.Leader || target == SkillTarget.Enemy) && targetPos != SharpDX.Vector2.Zero)
                 {
                     var worldPos = GridToWorld(targetPos);
                     var camera = _gameContext.GameController?.Game?.IngameState?.Camera;
@@ -230,6 +230,7 @@ namespace FollowBotV2.Services
                             screenPos.Y + windowRect.Location.Y
                         );
                         _mouseService.MoveCursorSmooth(new MouseVector2(finalPos.X, finalPos.Y), 10);
+                        System.Threading.Thread.Sleep(50);
                     }
                 }
 
