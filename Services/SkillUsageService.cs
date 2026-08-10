@@ -30,6 +30,10 @@ namespace FollowBotV2.Services
         private DateTime _lastBannerUseTime = DateTime.MinValue;
         private const int BANNER_COOLDOWN_MS = 500;
 
+        // ★★★ НОВЫЕ ПОЛЯ ДЛЯ ЗАДЕРЖКИ BUFF-СКИЛОВ ★★★
+        private DateTime _lastBuffSkillUseTime = DateTime.MinValue;
+        private const int BUFF_SKILL_COOLDOWN_MS = 250;
+
         public SkillUsageService(IGameContext gameContext, ILogService log, ISkillService skillService,
                                  FollowerSettings settings, IInputService inputService,
                                  IMouseService mouseService, IPartyService partyService, FollowerCore core)
@@ -60,7 +64,7 @@ namespace FollowBotV2.Services
             var player = _gameContext.Player;
             if (player == null) return;
 
-            // Логирование активных баффов
+            // Логирование активных баффов (под переключателем DebugSkills)
             if (_settings.ImGui.DebugSkills.Value)
             {
                 if ((DateTime.Now - _lastDebugLog).TotalSeconds >= 1)
@@ -89,7 +93,7 @@ namespace FollowBotV2.Services
             var skills = _skillService.GetSkills();
             if (skills.Count == 0) return;
 
-            // Логирование скилл-бара
+            // Логирование скилл-бара (под переключателем DebugSkillBar)
             if (_settings.ImGui.DebugSkillBar.Value && (DateTime.Now - _lastSkillBarLog).TotalMilliseconds >= SKILLBAR_LOG_INTERVAL_MS)
             {
                 _lastSkillBarLog = DateTime.Now;
@@ -123,14 +127,25 @@ namespace FollowBotV2.Services
                         continue;
                 }
 
+                // ★★★ Задержка для скилов с условием BuffMissing ★★★
+                if (settings.Condition == UseCondition.BuffMissing)
+                {
+                    if ((DateTime.Now - _lastBuffSkillUseTime).TotalMilliseconds < BUFF_SKILL_COOLDOWN_MS)
+                        continue;
+                }
+
                 var targetPos = GetTargetPosition(settings, skillInfo);
                 if (!targetPos.HasValue && settings.Target != SkillTarget.Self)
                     continue;
 
                 ApplySkill(skillInfo, targetPos ?? SharpDX.Vector2.Zero, settings.Target);
 
+                // Обновляем времена использования
                 if (IsBannerSkill(skillInfo.Name))
                     _lastBannerUseTime = DateTime.Now;
+
+                if (settings.Condition == UseCondition.BuffMissing)
+                    _lastBuffSkillUseTime = DateTime.Now;
             }
         }
 
@@ -202,8 +217,7 @@ namespace FollowBotV2.Services
             {
                 if (skillInfo.Key == Keys.None) return;
 
-                // ★★★ Перемещаем мышь для целей Enemy и Leader ★★★
-                if ((target == SkillTarget.Enemy || target == SkillTarget.Leader) && targetPos != SharpDX.Vector2.Zero)
+                if (target == SkillTarget.Leader && targetPos != SharpDX.Vector2.Zero)
                 {
                     var worldPos = GridToWorld(targetPos);
                     var camera = _gameContext.GameController?.Game?.IngameState?.Camera;
