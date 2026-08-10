@@ -32,18 +32,13 @@ namespace FollowBotV2.Config
         public int ValourThresholdValue { get; set; } = 105;
     }
 
-    public class FollowerSettings : ISettings
+    /// <summary>
+    /// Настройки, отображаемые только в ImGui-окне (не в стандартном UI ExileApi).
+    /// Все свойства внутри этого класса не имеют атрибута [Menu],
+    /// поэтому они не будут видны в стандартном интерфейсе.
+    /// </summary>
+    public class ImGuiOnlySettings
     {
-        public FollowerSettings()
-        {
-            Enable = new ToggleNode(true);
-            LeaderName = new TextNode("");
-            FollowKey = new HotkeyNode(Keys.F3);
-        }
-
-        [Menu("Enable")]
-        public ToggleNode Enable { get; set; }
-
         public ToggleNode DebugSkillBar { get; set; } = new ToggleNode(false);
         public ToggleNode DrawTransitions { get; set; } = new ToggleNode(false);
         public RangeNode<float> MaxLookAheadPixels { get; set; } = new RangeNode<float>(350, 100, 600);
@@ -56,20 +51,38 @@ namespace FollowBotV2.Config
         public ToggleNode ClearTriggerableBlockades { get; set; } = new ToggleNode(true);
         public HotkeyNode MovementKey { get; set; } = new HotkeyNode(Keys.T);
         public RangeNode<float> StopDistance { get; set; } = new RangeNode<float>(23, 10, 200);
-        public TextNode LeaderName { get; set; }
-        public HotkeyNode FollowKey { get; set; }
-
+        public TextNode LeaderName { get; set; } = new TextNode("");
+        public HotkeyNode FollowKey { get; set; } = new HotkeyNode(Keys.F3);
         public RangeNode<int> PathBuildTimeoutMs { get; set; } = new RangeNode<int>(1000, 500, 5000);
         public RangeNode<float> TransitionCooldownSeconds { get; set; } = new RangeNode<float>(3, 1, 10);
         public RangeNode<float> StopDistanceTolerance { get; set; } = new RangeNode<float>(15, 0, 50);
         public RangeNode<int> LeaderCheckIntervalMs { get; set; } = new RangeNode<int>(200, 100, 500);
-
         public ToggleNode ShowStatusWindow { get; set; } = new ToggleNode(false);
         public ToggleNode LockStatusWindow { get; set; } = new ToggleNode(false);
         public RangeNode<int> StatusWindowPosX { get; set; } = new RangeNode<int>(100, 0, 1920);
         public RangeNode<int> StatusWindowPosY { get; set; } = new RangeNode<int>(100, 0, 1080);
-
         public Dictionary<int, SkillSettings> SkillSettings { get; set; } = new Dictionary<int, SkillSettings>();
         public ToggleNode DebugSkills { get; set; } = new ToggleNode(false);
+    }
+
+    public class FollowerSettings : ISettings
+    {
+        public FollowerSettings()
+        {
+            Enable = new ToggleNode(true);
+            ImGui = new ImGuiOnlySettings();
+        }
+
+        [Menu("Enable")]
+        public ToggleNode Enable { get; set; }
+
+        [Menu(" ", "Press F7 to open advanced settings")] // пустое имя, только хинт
+        public string InfoMessage => "Open ImGui settings with F7";
+
+        /// <summary>
+        /// Все настройки, управляемые через ImGui.
+        /// Доступ: _settings.ImGui.ИмяСвойства
+        /// </summary>
+        public ImGuiOnlySettings ImGui { get; set; }
     }
 }

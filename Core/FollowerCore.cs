@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using FollowBotV2.Config;
 using FollowBotV2.Services;
 using GameOffsets.Native;
+using ImGuiNET;
 
 namespace FollowBotV2.Core
 {
@@ -72,7 +73,6 @@ namespace FollowBotV2.Core
             _skillService = new SkillService(_gameContext, _log);
             serviceLocator.Register<ISkillService>(_skillService);
 
-            // ★★★ ДОБАВИТЬ ЭТО ★★★
             _skillUsageService = new SkillUsageService(_gameContext, _log, _skillService, Settings, _inputService, _mouseService, _partyService, this);
             serviceLocator.Register<ISkillUsageService>(_skillUsageService);
 
@@ -81,7 +81,7 @@ namespace FollowBotV2.Core
             _imGuiOverlay = new ImGuiOverlay(Settings, _log, _partyService, _gameContext, this, _skillService);
 
             _log.Info("FollowBotV2 initializing...");
-            _inputService.RegisterKey(Settings.FollowKey.Value);
+            _inputService.RegisterKey(Settings.ImGui.FollowKey.Value);
             _inputService.RegisterKey(Keys.F7);
             _log.Info("FollowBotV2 initialized successfully.");
             return true;
@@ -91,7 +91,7 @@ namespace FollowBotV2.Core
         {
             if (!Settings.Enable.Value) return;
 
-            if (_inputService.PressedOnce(Settings.FollowKey.Value))
+            if (_inputService.PressedOnce(Settings.ImGui.FollowKey.Value))
             {
                 ToggleFollow();
             }
@@ -111,13 +111,12 @@ namespace FollowBotV2.Core
 
             _navigationService?.DrawPath(Graphics);
 
-            if (Settings.DrawTransitions.Value)
+            if (Settings.ImGui.DrawTransitions.Value)
             {
                 _transitionService?.RefreshTransitions();
                 _transitionService?.DrawTransitions(Graphics);
             }
 
-            // ★★★ ВСЕГДА ВЫЗЫВАЕМ ОБНОВЛЕНИЕ СКИЛЛОВ ★★★
             _skillUsageService?.Update();
 
             _imGuiOverlay?.Draw();
@@ -131,13 +130,9 @@ namespace FollowBotV2.Core
             _log.Info("Walkability data reloaded.");
         }
 
-        // ============================================================
-        // Основная логика
-        // ============================================================
-
         private void UpdateFollowing()
         {
-            string leaderName = Settings.LeaderName.Value;
+            string leaderName = Settings.ImGui.LeaderName.Value;
             if (string.IsNullOrEmpty(leaderName))
             {
                 _log.Debug("Leader name is empty");
@@ -145,7 +140,7 @@ namespace FollowBotV2.Core
                 return;
             }
 
-            if ((DateTime.Now - _lastLeaderCheck).TotalMilliseconds < Settings.LeaderCheckIntervalMs.Value)
+            if ((DateTime.Now - _lastLeaderCheck).TotalMilliseconds < Settings.ImGui.LeaderCheckIntervalMs.Value)
                 return;
             _lastLeaderCheck = DateTime.Now;
 
@@ -163,8 +158,8 @@ namespace FollowBotV2.Core
 
             var leaderPos = _partyService.GetPlayerGridPosition(leaderName);
             bool found = leaderPos.HasValue;
-            float stopDist = Settings.StopDistance?.Value ?? 23;
-            float tolerance = Settings.StopDistanceTolerance?.Value ?? 15;
+            float stopDist = Settings.ImGui.StopDistance?.Value ?? 23;
+            float tolerance = Settings.ImGui.StopDistanceTolerance?.Value ?? 15;
 
             _skillUsageService.Update();
 
@@ -215,7 +210,7 @@ namespace FollowBotV2.Core
         {
             if (!found)
             {
-                bool sameZone = _partyService.IsPlayerInSameZone(Settings.LeaderName.Value);
+                bool sameZone = _partyService.IsPlayerInSameZone(Settings.ImGui.LeaderName.Value);
                 if (sameZone)
                 {
                     _log.Info("Leader not visible, switching to transition.");
@@ -247,7 +242,7 @@ namespace FollowBotV2.Core
 
             if (_navigationService.IsPathfinding)
             {
-                if ((DateTime.Now - _stateEnterTime).TotalMilliseconds > Settings.PathBuildTimeoutMs.Value)
+                if ((DateTime.Now - _stateEnterTime).TotalMilliseconds > Settings.ImGui.PathBuildTimeoutMs.Value)
                 {
                     _log.Warn("Path build timeout, switching to transition.");
                     _navigationService?.Stop();
@@ -295,9 +290,9 @@ namespace FollowBotV2.Core
                 _log.Info("Reached transition, clicking...");
                 _transitionService.ClickTransition(transitionPos.Value);
                 _navigationService?.Stop();
-                _cooldownUntil = DateTime.Now.AddSeconds(Settings.TransitionCooldownSeconds.Value);
+                _cooldownUntil = DateTime.Now.AddSeconds(Settings.ImGui.TransitionCooldownSeconds.Value);
                 _lastLeaderFound = false;
-                _log.Info($"Transition clicked, cooldown active for {Settings.TransitionCooldownSeconds.Value} seconds.");
+                _log.Info($"Transition clicked, cooldown active for {Settings.ImGui.TransitionCooldownSeconds.Value} seconds.");
                 SetState(FollowerState.Cooldown);
             }
         }
@@ -343,10 +338,6 @@ namespace FollowBotV2.Core
             }
         }
 
-        // ============================================================
-        // Управление состоянием
-        // ============================================================
-
         private void SetState(FollowerState newState)
         {
             if (_state == newState) return;
@@ -355,10 +346,6 @@ namespace FollowBotV2.Core
             _log.Debug($"State changed to: {newState}");
         }
 
-        // ============================================================
-        // Управление ботом
-        // ============================================================
-
         public void ToggleFollow()
         {
             if (_state == FollowerState.Stopped)
@@ -366,7 +353,7 @@ namespace FollowBotV2.Core
                 SetState(FollowerState.Following);
                 _lastLeaderFound = false;
                 _cooldownUntil = DateTime.MinValue;
-                _log.Info($"Following started. Target: {Settings.LeaderName.Value}");
+                _log.Info($"Following started. Target: {Settings.ImGui.LeaderName.Value}");
             }
             else
             {
@@ -385,13 +372,19 @@ namespace FollowBotV2.Core
             _transitionService?.RefreshTransitions();
             _navigationService?.LoadWalkabilityData();
             _navigationService?.Stop();
-            _skillService?.RefreshKeybindings(); // <-- добавьте
+            _skillService?.RefreshKeybindings();
             SetState(FollowerState.Following);
         }
 
-        // ============================================================
-        // Вспомогательные методы
-        // ============================================================
+        public override void DrawSettings()
+        {
+            // Отрисовываем стандартные настройки (если есть)
+            base.DrawSettings();
+
+            // Добавляем подсказку
+            ImGui.TextColored(new System.Numerics.Vector4(0.8f, 0.8f, 0.2f, 1f), "Press F7 to open advanced settings (ImGui)");
+            ImGui.Separator();
+        }
 
         public float Distance(Vector2i a, Vector2i b)
         {

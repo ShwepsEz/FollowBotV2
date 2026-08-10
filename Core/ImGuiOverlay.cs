@@ -115,9 +115,6 @@ namespace FollowBotV2.Core
             }
         }
 
-        // ============================================================
-        // Вкладка "General"
-        // ============================================================
         private void DrawGeneralTab()
         {
             ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "General Settings");
@@ -125,15 +122,15 @@ namespace FollowBotV2.Core
 
             ImGui.Text("Leader Name:");
             ImGui.SameLine();
-            var leaderName = _settings.LeaderName.Value;
+            var leaderName = _settings.ImGui.LeaderName.Value;
             if (ImGui.InputText("##LeaderName", ref leaderName, 64))
             {
-                _settings.LeaderName.Value = leaderName;
+                _settings.ImGui.LeaderName.Value = leaderName;
             }
 
             ImGui.Text("Follow Key:");
             ImGui.SameLine();
-            ImGui.Text(_settings.FollowKey.Value.ToString());
+            ImGui.Text(_settings.ImGui.FollowKey.Value.ToString());
 
             ImGui.Separator();
 
@@ -153,103 +150,93 @@ namespace FollowBotV2.Core
 
             ImGui.Separator();
             ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "Status Window");
-            bool showStatus = _settings.ShowStatusWindow.Value;
+            bool showStatus = _settings.ImGui.ShowStatusWindow.Value;
             if (ImGui.Checkbox("Show Status Window", ref showStatus))
-                _settings.ShowStatusWindow.Value = showStatus;
-            bool lockStatus = _settings.LockStatusWindow.Value;
+                _settings.ImGui.ShowStatusWindow.Value = showStatus;
+            bool lockStatus = _settings.ImGui.LockStatusWindow.Value;
             if (ImGui.Checkbox("Lock Status Window (click-through)", ref lockStatus))
-                _settings.LockStatusWindow.Value = lockStatus;
+                _settings.ImGui.LockStatusWindow.Value = lockStatus;
         }
 
-        // ============================================================
-        // Вкладка "Pathfinding"
-        // ============================================================
         private void DrawPathfindingTab()
         {
             ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "Pathfinding Settings");
             ImGui.Separator();
 
-            float stopDist = _settings.StopDistance.Value;
+            float stopDist = _settings.ImGui.StopDistance.Value;
             if (ImGui.SliderFloat("Stop Distance", ref stopDist, 10, 200, "%.0f"))
-                _settings.StopDistance.Value = stopDist;
+                _settings.ImGui.StopDistance.Value = stopDist;
 
-            float tolerance = _settings.StopDistanceTolerance.Value;
+            float tolerance = _settings.ImGui.StopDistanceTolerance.Value;
             if (ImGui.SliderFloat("Stop Tolerance", ref tolerance, 0, 50, "%.0f"))
-                _settings.StopDistanceTolerance.Value = tolerance;
+                _settings.ImGui.StopDistanceTolerance.Value = tolerance;
 
-            float maxLook = _settings.MaxLookAheadPixels.Value;
+            float maxLook = _settings.ImGui.MaxLookAheadPixels.Value;
             if (ImGui.SliderFloat("Max Look Ahead", ref maxLook, 100, 600, "%.0f"))
-                _settings.MaxLookAheadPixels.Value = maxLook;
+                _settings.ImGui.MaxLookAheadPixels.Value = maxLook;
 
-            float minLook = _settings.MinLookAheadPixels.Value;
+            float minLook = _settings.ImGui.MinLookAheadPixels.Value;
             if (ImGui.SliderFloat("Min Look Ahead", ref minLook, 30, 200, "%.0f"))
-                _settings.MinLookAheadPixels.Value = minLook;
+                _settings.ImGui.MinLookAheadPixels.Value = minLook;
 
-            float maxGrid = _settings.MaxGridDistance.Value;
+            float maxGrid = _settings.ImGui.MaxGridDistance.Value;
             if (ImGui.SliderFloat("Max Grid Distance", ref maxGrid, 50, 500, "%.0f"))
-                _settings.MaxGridDistance.Value = maxGrid;
+                _settings.ImGui.MaxGridDistance.Value = maxGrid;
 
-            float minGrid = _settings.MinGridDistance.Value;
+            float minGrid = _settings.ImGui.MinGridDistance.Value;
             if (ImGui.SliderFloat("Min Grid Distance", ref minGrid, 5, 50, "%.0f"))
-                _settings.MinGridDistance.Value = minGrid;
+                _settings.ImGui.MinGridDistance.Value = minGrid;
 
-            int timeout = _settings.PathBuildTimeoutMs.Value;
+            int timeout = _settings.ImGui.PathBuildTimeoutMs.Value;
             if (ImGui.SliderInt("Path Build Timeout (ms)", ref timeout, 500, 5000))
-                _settings.PathBuildTimeoutMs.Value = timeout;
+                _settings.ImGui.PathBuildTimeoutMs.Value = timeout;
 
             ImGui.Separator();
-            bool clearBlockades = _settings.ClearTriggerableBlockades.Value;
+            bool clearBlockades = _settings.ImGui.ClearTriggerableBlockades.Value;
             if (ImGui.Checkbox("Clear Triggerable Blockades", ref clearBlockades))
-                _settings.ClearTriggerableBlockades.Value = clearBlockades;
+                _settings.ImGui.ClearTriggerableBlockades.Value = clearBlockades;
 
-            bool drawPath = _settings.DrawPath.Value;
+            bool drawPath = _settings.ImGui.DrawPath.Value;
             if (ImGui.Checkbox("Draw Path", ref drawPath))
-                _settings.DrawPath.Value = drawPath;
+                _settings.ImGui.DrawPath.Value = drawPath;
         }
 
-        // ============================================================
-        // Вкладка "Transitions"
-        // ============================================================
         private void DrawTransitionsTab()
         {
             ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "Transitions Settings");
             ImGui.Separator();
 
-            bool usePortals = _settings.UsePortals.Value;
+            bool usePortals = _settings.ImGui.UsePortals.Value;
             if (ImGui.Checkbox("Use Portals", ref usePortals))
-                _settings.UsePortals.Value = usePortals;
+                _settings.ImGui.UsePortals.Value = usePortals;
 
-            bool drawTransitions = _settings.DrawTransitions.Value;
+            bool drawTransitions = _settings.ImGui.DrawTransitions.Value;
             if (ImGui.Checkbox("Draw Transitions", ref drawTransitions))
-                _settings.DrawTransitions.Value = drawTransitions;
+                _settings.ImGui.DrawTransitions.Value = drawTransitions;
 
-            float cooldown = _settings.TransitionCooldownSeconds.Value;
+            float cooldown = _settings.ImGui.TransitionCooldownSeconds.Value;
             if (ImGui.SliderFloat("Transition Cooldown (s)", ref cooldown, 1, 10, "%.1f"))
-                _settings.TransitionCooldownSeconds.Value = cooldown;
+                _settings.ImGui.TransitionCooldownSeconds.Value = cooldown;
 
-            int offset = _settings.PortalClickOffset.Value;
+            int offset = _settings.ImGui.PortalClickOffset.Value;
             if (ImGui.SliderInt("Portal Click Offset", ref offset, -50, 50))
-                _settings.PortalClickOffset.Value = offset;
+                _settings.ImGui.PortalClickOffset.Value = offset;
         }
 
-        // ============================================================
-        // Вкладка "Skills"
-        // ============================================================
         private void DrawSkillsTab()
         {
             ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "Skills");
             ImGui.Separator();
 
-            bool debugSkills = _settings.DebugSkills.Value;
+            bool debugSkills = _settings.ImGui.DebugSkills.Value;
             if (ImGui.Checkbox("Debug Skills (log active buffs)", ref debugSkills))
-            {
-                _settings.DebugSkills.Value = debugSkills;
-            }
-            ImGui.Separator();
+                _settings.ImGui.DebugSkills.Value = debugSkills;
 
-            bool debugSkillBar = _settings.DebugSkillBar.Value;
+            bool debugSkillBar = _settings.ImGui.DebugSkillBar.Value;
             if (ImGui.Checkbox("Debug Skill Bar (show skills in slots)", ref debugSkillBar))
-                _settings.DebugSkillBar.Value = debugSkillBar;
+                _settings.ImGui.DebugSkillBar.Value = debugSkillBar;
+
+            ImGui.Separator();
 
             var skills = _skillService.GetSkills();
             if (skills.Count == 0)
@@ -262,10 +249,10 @@ namespace FollowBotV2.Core
             {
                 ImGui.PushID(skill.SlotIndex);
 
-                if (!_settings.SkillSettings.TryGetValue(skill.SlotIndex, out var skillConfig))
+                if (!_settings.ImGui.SkillSettings.TryGetValue(skill.SlotIndex, out var skillConfig))
                 {
                     skillConfig = new SkillSettings();
-                    _settings.SkillSettings[skill.SlotIndex] = skillConfig;
+                    _settings.ImGui.SkillSettings[skill.SlotIndex] = skillConfig;
                 }
 
                 string keyDisplay = skill.Key switch
@@ -280,7 +267,7 @@ namespace FollowBotV2.Core
                 string status = "";
                 if (skillConfig.Enabled) status += "[Enabled] ";
                 if (skillConfig.Condition == UseCondition.BuffMissing) status += "[Buff] ";
-                if (skillConfig.Condition == UseCondition.NearbyEnemies) status += $"[{skillConfig.NearbyEnemyThreshold}+ enemies, radius {skillConfig.NearbyEnemyRadius}] ";
+                if (skillConfig.Condition == UseCondition.NearbyEnemies) status += $"[{skillConfig.NearbyEnemyThreshold}+ enemies] ";
                 if (skillConfig.Condition == UseCondition.ValourThreshold) status += $"[Valour ≥ {skillConfig.ValourThresholdValue}] ";
                 status += $"(Target: {skillConfig.Target})";
 
@@ -300,7 +287,6 @@ namespace FollowBotV2.Core
                     if (ImGui.Combo("Use Condition", ref conditionIndex, conditionNames, conditionNames.Length))
                         skillConfig.Condition = (UseCondition)conditionIndex;
 
-                    // ★★★ ЕДИНСТВЕННЫЙ БЛОК ДЛЯ NEARBYENEMIES ★★★
                     if (skillConfig.Condition == UseCondition.NearbyEnemies)
                     {
                         int threshold = skillConfig.NearbyEnemyThreshold;
@@ -313,7 +299,6 @@ namespace FollowBotV2.Core
                         ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Radius to search for nearby enemies");
                     }
 
-                    // ★★★ БЛОК ДЛЯ VALOURTHRESHOLD ★★★
                     if (skillConfig.Condition == UseCondition.ValourThreshold)
                     {
                         bool isBanner = skill.Name.Contains("Banner", StringComparison.OrdinalIgnoreCase);
@@ -337,24 +322,23 @@ namespace FollowBotV2.Core
             }
         }
 
-        // ============================================================
-        // Status Window
-        // ============================================================
         public void DrawStatusWindow()
         {
-            if (!_settings.ShowStatusWindow.Value) return;
+            if (!_settings.ImGui.ShowStatusWindow.Value) return;
 
-            var posX = _settings.StatusWindowPosX.Value;
-            var posY = _settings.StatusWindowPosY.Value;
+            var posX = _settings.ImGui.StatusWindowPosX.Value;
+            var posY = _settings.ImGui.StatusWindowPosY.Value;
             if (posX > 0 && posY > 0)
                 _statusWindowPos = new Vector2(posX, posY);
 
-            var flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar |
-                        ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings;
-            if (_settings.LockStatusWindow.Value)
-                flags |= ImGuiWindowFlags.NoInputs;
-
             ImGui.SetNextWindowPos(_statusWindowPos, ImGuiCond.Always);
+            ImGui.SetNextWindowSize(new Vector2(0, 0), ImGuiCond.Always); // авторазмер
+
+            var flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar |
+                        ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings |
+                        ImGuiWindowFlags.AlwaysAutoResize; // ← авторазмер по содержимому
+            if (_settings.ImGui.LockStatusWindow.Value)
+                flags |= ImGuiWindowFlags.NoInputs;
 
             ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 5f);
             ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0.1f, 0.1f, 0.12f, 0.9f));
@@ -367,7 +351,7 @@ namespace FollowBotV2.Core
                 var stateColor = state == FollowerState.Stopped ? new Vector4(1, 0.3f, 0.3f, 1) : new Vector4(0.3f, 1, 0.3f, 1);
                 ImGui.TextColored(stateColor, $"State: {stateText}");
 
-                string leaderName = _settings.LeaderName.Value;
+                string leaderName = _settings.ImGui.LeaderName.Value;
                 ImGui.Text($"Leader: {leaderName}");
 
                 bool inParty = _partyService.IsLeaderInParty(leaderName);
@@ -397,7 +381,8 @@ namespace FollowBotV2.Core
 
                 ImGui.Text($"Cooldown: {(_core.CooldownRemaining > 0 ? $"{_core.CooldownRemaining:F1}s" : "None")}");
 
-                if (!_settings.LockStatusWindow.Value)
+                // Перетаскивание окна (без изменений)
+                if (!_settings.ImGui.LockStatusWindow.Value)
                 {
                     if (ImGui.IsWindowHovered() && ImGui.IsMouseDown(0))
                     {
@@ -412,8 +397,8 @@ namespace FollowBotV2.Core
                     {
                         var mouseDelta = ImGui.GetMousePos() - _dragStartMouse;
                         _statusWindowPos = _dragStartPos + mouseDelta;
-                        _settings.StatusWindowPosX.Value = (int)_statusWindowPos.X;
-                        _settings.StatusWindowPosY.Value = (int)_statusWindowPos.Y;
+                        _settings.ImGui.StatusWindowPosX.Value = (int)_statusWindowPos.X;
+                        _settings.ImGui.StatusWindowPosY.Value = (int)_statusWindowPos.Y;
                     }
                     if (_isDraggingStatusWindow && !ImGui.IsMouseDown(0))
                         _isDraggingStatusWindow = false;

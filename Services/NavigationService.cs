@@ -70,7 +70,7 @@ namespace FollowBotV2.Services
                 var playerPos = player.GetComponent<ExileCore.PoEMemory.Components.Positioned>();
                 if (playerPos == null) return false;
                 var currentGrid = new Vector2i((int)playerPos.GridPosNum.X, (int)playerPos.GridPosNum.Y);
-                return Distance(currentGrid, _currentTarget.Value) <= (_settings.StopDistance?.Value ?? 23);
+                return Distance(currentGrid, _currentTarget.Value) <= (_settings.ImGui.StopDistance?.Value ?? 23);
             }
         }
 
@@ -85,7 +85,7 @@ namespace FollowBotV2.Services
                     return;
                 }
 
-                if (_settings.ClearTriggerableBlockades?.Value == true)
+                if (_settings.ImGui.ClearTriggerableBlockades?.Value == true)
                 {
                     _walkabilityData = ingameData.GetClearedPathfindingData();
                     _log.Debug("Loaded cleared walkability data (doors removed).");
@@ -265,7 +265,7 @@ namespace FollowBotV2.Services
                         if (_currentTarget.HasValue)
                         {
                             float distToTargetAfterPath = Distance(currentGrid, _currentTarget.Value);
-                            if (distToTargetAfterPath <= (_settings.StopDistance?.Value ?? 23))
+                            if (distToTargetAfterPath <= (_settings.ImGui.StopDistance?.Value ?? 23))
                             {
                                 _log.Debug("Reached target, stopping.");
                                 StopMovement();
@@ -328,10 +328,10 @@ namespace FollowBotV2.Services
             if (_currentTarget.HasValue)
             {
                 float distToTarget = Distance(currentGrid, _currentTarget.Value);
-                float maxLookAhead = _settings.MaxLookAheadPixels.Value;
-                float minLookAhead = _settings.MinLookAheadPixels.Value;
-                float maxGridDist = _settings.MaxGridDistance.Value;
-                float minGridDist = _settings.MinGridDistance.Value;
+                float maxLookAhead = _settings.ImGui.MaxLookAheadPixels.Value;
+                float minLookAhead = _settings.ImGui.MinLookAheadPixels.Value;
+                float maxGridDist = _settings.ImGui.MaxGridDistance.Value;
+                float minGridDist = _settings.ImGui.MinGridDistance.Value;
 
                 float t = (distToTarget - minGridDist) / (maxGridDist - minGridDist);
                 t = Math.Clamp(t, 0f, 1f);
@@ -339,7 +339,7 @@ namespace FollowBotV2.Services
             }
             else
             {
-                targetScreenDistance = _settings.MaxLookAheadPixels.Value;
+                targetScreenDistance = _settings.ImGui.MaxLookAheadPixels.Value;
             }
 
             Vector2 targetScreenPos = currentScreen + direction * targetScreenDistance;
@@ -389,12 +389,12 @@ namespace FollowBotV2.Services
             }
 
             float distToTargetFinal = _currentTarget.HasValue ? Distance(currentGrid, _currentTarget.Value) : float.MaxValue;
-            if (distToTargetFinal > (_settings.StopDistance?.Value ?? 23))
+            if (distToTargetFinal > (_settings.ImGui.StopDistance?.Value ?? 23))
             {
                 if (!_wantToMove)
                 {
                     _wantToMove = true;
-                    _inputService.KeyDown(_settings.MovementKey.Value);
+                    _inputService.KeyDown(_settings.ImGui.MovementKey.Value);
                 }
             }
             else
@@ -402,7 +402,7 @@ namespace FollowBotV2.Services
                 if (_wantToMove)
                 {
                     _wantToMove = false;
-                    _inputService.KeyUp(_settings.MovementKey.Value);
+                    _inputService.KeyUp(_settings.ImGui.MovementKey.Value);
                 }
             }
         }
@@ -412,7 +412,7 @@ namespace FollowBotV2.Services
             if (_wantToMove)
             {
                 _wantToMove = false;
-                _inputService.KeyUp(_settings.MovementKey.Value);
+                _inputService.KeyUp(_settings.ImGui.MovementKey.Value);
             }
             _lastTargetScreenPosition = null;
             _isMouseMoving = false;
@@ -424,7 +424,7 @@ namespace FollowBotV2.Services
             if (_wantToMove)
             {
                 _wantToMove = false;
-                _inputService.KeyUp(_settings.MovementKey.Value);
+                _inputService.KeyUp(_settings.ImGui.MovementKey.Value);
             }
             _lastTargetScreenPosition = null;
             _isMouseMoving = false;
@@ -433,7 +433,7 @@ namespace FollowBotV2.Services
 
         public void DrawPath(Graphics graphics)
         {
-            if (!_settings.DrawPath?.Value == true) return;
+            if (!_settings.ImGui.DrawPath?.Value == true) return;
             if (_currentPath.Count < 2) return;
 
             var camera = _gameContext.GameController.Game.IngameState.Camera;
@@ -465,10 +465,7 @@ namespace FollowBotV2.Services
             }
         }
 
-        // ============================================================
-        // Приватные методы A* и вспомогательные
-        // ============================================================
-
+        // A* и вспомогательные методы (без изменений)
         private bool IsWalkable(Vector2i pos)
         {
             if (!_areaDimensions.HasValue || _walkabilityData == null)

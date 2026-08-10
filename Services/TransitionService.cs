@@ -95,7 +95,7 @@ namespace FollowBotV2.Services
         public bool ShouldClickTransition(Vector2i currentPosition, Vector2i transitionPosition)
         {
             float distance = Distance(currentPosition, transitionPosition);
-            return distance <= (_settings.StopDistance?.Value ?? 23);
+            return distance <= (_settings.ImGui.StopDistance?.Value ?? 23);
         }
 
         public void ClickTransition(Vector2i transitionPosition)
@@ -243,6 +243,13 @@ namespace FollowBotV2.Services
         {
             if (string.IsNullOrEmpty(leaderName)) return null;
 
+            if (!_settings.ImGui.UsePortals.Value)
+            {
+                _log.Debug("Portals disabled in settings.");
+                _currentPortal = null;
+                return null;
+            }
+
             bool sameZone = _partyService.IsPlayerInSameZone(leaderName);
             if (sameZone)
             {
@@ -289,7 +296,7 @@ namespace FollowBotV2.Services
                 return false;
 
             float distance = Distance(currentPosition, portalPosition);
-            return distance <= (_settings.StopDistance?.Value ?? 23);
+            return distance <= (_settings.ImGui.StopDistance?.Value ?? 23);
         }
 
         public void ClickPortal(Vector2i portalPosition)
@@ -314,8 +321,9 @@ namespace FollowBotV2.Services
                 if (screenPos == SharpDX.Vector2.Zero) return;
 
                 var windowRect = _gameContext.GameController.Window.GetWindowRectangle();
+                int offset = _settings.ImGui.PortalClickOffset.Value;
                 var targetScreen = new SharpDX.Vector2(
-                    screenPos.X + windowRect.Location.X,
+                    screenPos.X + windowRect.Location.X + offset,
                     screenPos.Y + windowRect.Location.Y
                 );
 
@@ -342,10 +350,7 @@ namespace FollowBotV2.Services
             _lastTransitionClickTime = DateTime.MinValue;
         }
 
-        // ============================================================
-        // ПРИВАТНЫЕ МЕТОДЫ
-        // ============================================================
-
+        // Приватные методы
         private Entity FindPortalToZone(string targetZone)
         {
             try

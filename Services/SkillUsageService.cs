@@ -60,8 +60,8 @@ namespace FollowBotV2.Services
             var player = _gameContext.Player;
             if (player == null) return;
 
-            // ★★★ Логирование активных баффов (DebugSkills) ★★★
-            if (_settings.DebugSkills.Value)
+            // Логирование активных баффов
+            if (_settings.ImGui.DebugSkills.Value)
             {
                 if ((DateTime.Now - _lastDebugLog).TotalSeconds >= 1)
                 {
@@ -86,21 +86,19 @@ namespace FollowBotV2.Services
                 }
             }
 
-            // ★★★ Получение списка скилов ★★★
             var skills = _skillService.GetSkills();
             if (skills.Count == 0) return;
 
-            // ★★★ Логирование скилл-бара (DebugSkillBar) ★★★
-            if (_settings.DebugSkillBar.Value && (DateTime.Now - _lastSkillBarLog).TotalMilliseconds >= SKILLBAR_LOG_INTERVAL_MS)
+            // Логирование скилл-бара
+            if (_settings.ImGui.DebugSkillBar.Value && (DateTime.Now - _lastSkillBarLog).TotalMilliseconds >= SKILLBAR_LOG_INTERVAL_MS)
             {
                 _lastSkillBarLog = DateTime.Now;
                 _skillService.LogCurrentSkills();
             }
 
-            // ★★★ Основной цикл по скилам ★★★
             foreach (var skillInfo in skills)
             {
-                if (!_settings.SkillSettings.TryGetValue(skillInfo.SlotIndex, out var settings))
+                if (!_settings.ImGui.SkillSettings.TryGetValue(skillInfo.SlotIndex, out var settings))
                     continue;
 
                 if (!settings.Enabled)
@@ -185,7 +183,7 @@ namespace FollowBotV2.Services
                     return new SharpDX.Vector2(mousePos.X, mousePos.Y);
 
                 case SkillTarget.Leader:
-                    string leaderName = _settings.LeaderName.Value;
+                    string leaderName = _settings.ImGui.LeaderName.Value;
                     if (string.IsNullOrEmpty(leaderName))
                         return null;
                     var pos = _partyService.GetPlayerGridPosition(leaderName);
@@ -434,14 +432,12 @@ namespace FollowBotV2.Services
                 var buffs = buffsComponent.ParseBuffs();
                 if (buffs == null || buffs.Count == 0) return false;
 
-                // Формируем паттерны для поиска
                 string[] searchPatterns = {
-            skillName,
-            internalName,
-            skillName.Replace("Banner", "").Trim(),
-            internalName.Replace("Banner", "").Trim()
-        };
-                // Убираем пустые и дубликаты
+                    skillName,
+                    internalName,
+                    skillName.Replace("Banner", "").Trim(),
+                    internalName.Replace("Banner", "").Trim()
+                };
                 searchPatterns = searchPatterns
                     .Where(p => !string.IsNullOrEmpty(p))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
