@@ -287,16 +287,17 @@ namespace FollowBotV2.Core
                     if (ImGui.Combo("Use Condition", ref conditionIndex, conditionNames, conditionNames.Length))
                         skillConfig.Condition = (UseCondition)conditionIndex;
 
+                    // ★★★ Радиус поиска врагов (всегда доступен) ★★★
+                    int radius = skillConfig.EnemySearchRadius;
+                    if (ImGui.SliderInt("Enemy Search Radius (grid)", ref radius, 10, 200))
+                        skillConfig.EnemySearchRadius = radius;
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Radius for enemy targeting and nearby count");
+
                     if (skillConfig.Condition == UseCondition.NearbyEnemies)
                     {
                         int threshold = skillConfig.NearbyEnemyThreshold;
                         if (ImGui.SliderInt("Enemy Count Threshold", ref threshold, 1, 20))
                             skillConfig.NearbyEnemyThreshold = threshold;
-
-                        int radius = skillConfig.NearbyEnemyRadius;
-                        if (ImGui.SliderInt("Search Radius (grid)", ref radius, 10, 150))
-                            skillConfig.NearbyEnemyRadius = radius;
-                        ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Radius to search for nearby enemies");
                     }
 
                     if (skillConfig.Condition == UseCondition.ValourThreshold)

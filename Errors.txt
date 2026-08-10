@@ -1,3 +1,2 @@
 Build failed:
-[10.08.2026 11:33:53, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Core\FollowerCore.cs(384, 13)] CS0103: Имя "ImGui" не существует в текущем контексте.
-[10.08.2026 11:33:53, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Core\FollowerCore.cs(385, 13)] CS0103: Имя "ImGui" не существует в текущем контексте.
+[10.08.2026 15:02:31, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\SkillUsageService.cs(150, 67)] CS1061: "SkillSettings" не содержит определения "NearbyEnemyRadius", и не удалось найти доступный метод расширения "NearbyEnemyRadius", принимающий тип "SkillSettings" в качестве первого аргумента (возможно, пропущена директива using или ссылка на сборку).

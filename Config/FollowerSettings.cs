@@ -28,7 +28,7 @@ namespace FollowBotV2.Config
         public SkillTarget Target { get; set; } = SkillTarget.Self;
         public UseCondition Condition { get; set; } = UseCondition.Always;
         public int NearbyEnemyThreshold { get; set; } = 3;
-        public int NearbyEnemyRadius { get; set; } = 50;
+        public int EnemySearchRadius { get; set; } = 50;
         public int ValourThresholdValue { get; set; } = 105;
     }
 

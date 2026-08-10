@@ -99,7 +99,6 @@ namespace FollowBotV2.Core
             if (_inputService.PressedOnce(Keys.F7))
             {
                 _imGuiOverlay.ToggleVisibility();
-                _log.Debug($"ImGui window toggled: {_imGuiOverlay.IsVisible}");
             }
 
             if (_state != FollowerState.Stopped)
@@ -135,7 +134,6 @@ namespace FollowBotV2.Core
             string leaderName = Settings.ImGui.LeaderName.Value;
             if (string.IsNullOrEmpty(leaderName))
             {
-                _log.Debug("Leader name is empty");
                 SetState(FollowerState.Stopped);
                 return;
             }
@@ -149,7 +147,7 @@ namespace FollowBotV2.Core
             {
                 if (_lastLeaderFound)
                 {
-                    _log.Info($"Leader '{leaderName}' left party or not in party anymore.");
+                    _log.Info($"Leader '{leaderName}' left party.");
                     _lastLeaderFound = false;
                 }
                 SetState(FollowerState.Stopped);
@@ -213,12 +211,10 @@ namespace FollowBotV2.Core
                 bool sameZone = _partyService.IsPlayerInSameZone(Settings.ImGui.LeaderName.Value);
                 if (sameZone)
                 {
-                    _log.Info("Leader not visible, switching to transition.");
                     SetState(FollowerState.Transitioning);
                 }
                 else
                 {
-                    _log.Info("Leader in different zone, switching to portal.");
                     SetState(FollowerState.Portaling);
                 }
                 return;
@@ -227,7 +223,6 @@ namespace FollowBotV2.Core
             if (_navigationService.HasPath)
                 return;
 
-            _log.Debug($"Building path to leader at ({leaderPos.Value.X}, {leaderPos.Value.Y})");
             _navigationService?.MoveTo(leaderPos.Value);
             SetState(FollowerState.WaitingForPath);
         }
@@ -275,7 +270,6 @@ namespace FollowBotV2.Core
 
             if (!_navigationService.HasPath && !_navigationService.IsPathfinding)
             {
-                _log.Debug($"Moving to transition at ({transitionPos.Value.X}, {transitionPos.Value.Y})");
                 _navigationService?.MoveTo(transitionPos.Value);
             }
 
@@ -287,12 +281,10 @@ namespace FollowBotV2.Core
 
             if (_transitionService.ShouldClickTransition(currentGrid, transitionPos.Value))
             {
-                _log.Info("Reached transition, clicking...");
                 _transitionService.ClickTransition(transitionPos.Value);
                 _navigationService?.Stop();
                 _cooldownUntil = DateTime.Now.AddSeconds(Settings.ImGui.TransitionCooldownSeconds.Value);
                 _lastLeaderFound = false;
-                _log.Info($"Transition clicked, cooldown active for {Settings.ImGui.TransitionCooldownSeconds.Value} seconds.");
                 SetState(FollowerState.Cooldown);
             }
         }
@@ -308,7 +300,7 @@ namespace FollowBotV2.Core
             var portalPos = _transitionService.GetPortalTarget(leaderName);
             if (!portalPos.HasValue)
             {
-                _log.Debug("Portal not found or disappeared, stopping.");
+                _log.Warn("Portal not found, stopping.");
                 _navigationService?.Stop();
                 SetState(FollowerState.Stopped);
                 return;
@@ -316,7 +308,6 @@ namespace FollowBotV2.Core
 
             if (!_navigationService.HasPath && !_navigationService.IsPathfinding)
             {
-                _log.Debug($"Moving to portal at ({portalPos.Value.X}, {portalPos.Value.Y})");
                 _navigationService?.MoveTo(portalPos.Value);
             }
 
@@ -328,12 +319,10 @@ namespace FollowBotV2.Core
 
             if (_transitionService.ShouldClickPortal(currentGrid, portalPos.Value))
             {
-                _log.Info("Reached portal, clicking...");
                 _transitionService.ClickPortal(portalPos.Value);
                 _navigationService?.Stop();
                 _cooldownUntil = DateTime.Now.AddSeconds(3);
                 _lastLeaderFound = false;
-                _log.Info("Portal clicked, cooldown active for 3 seconds.");
                 SetState(FollowerState.Cooldown);
             }
         }
@@ -343,7 +332,6 @@ namespace FollowBotV2.Core
             if (_state == newState) return;
             _state = newState;
             _stateEnterTime = DateTime.Now;
-            _log.Debug($"State changed to: {newState}");
         }
 
         public void ToggleFollow()
@@ -378,10 +366,7 @@ namespace FollowBotV2.Core
 
         public override void DrawSettings()
         {
-            // Отрисовываем стандартные настройки (если есть)
             base.DrawSettings();
-
-            // Добавляем подсказку
             ImGui.TextColored(new System.Numerics.Vector4(0.8f, 0.8f, 0.2f, 1f), "Press F7 to open advanced settings (ImGui)");
             ImGui.Separator();
         }

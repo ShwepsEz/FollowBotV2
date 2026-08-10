@@ -125,7 +125,6 @@ namespace FollowBotV2.Services
                     screenPos.Y + windowRect.Location.Y
                 );
 
-                _log.Info($"Clicking transition at screen ({targetScreen.X:F0}, {targetScreen.Y:F0}) attempt {_transitionClickAttempts + 1}/{MAX_TRANSITION_CLICK_ATTEMPTS}");
                 _mouseService.MoveCursorSmooth(new MouseVector2(targetScreen.X, targetScreen.Y), 10);
                 Thread.Sleep(100);
                 _mouseService.LeftClick();
@@ -155,7 +154,6 @@ namespace FollowBotV2.Services
                     .ToList();
 
                 _cachedTransitions.AddRange(entities);
-                _log.Debug($"Refreshed transitions: {_cachedTransitions.Count} found.");
             }
             catch (Exception ex)
             {
@@ -244,11 +242,7 @@ namespace FollowBotV2.Services
             if (string.IsNullOrEmpty(leaderName)) return null;
 
             if (!_settings.ImGui.UsePortals.Value)
-            {
-                _log.Debug("Portals disabled in settings.");
-                _currentPortal = null;
                 return null;
-            }
 
             bool sameZone = _partyService.IsPlayerInSameZone(leaderName);
             if (sameZone)
@@ -260,18 +254,14 @@ namespace FollowBotV2.Services
             string leaderZone = _partyService.GetPlayerZoneName(leaderName);
             if (string.IsNullOrEmpty(leaderZone))
             {
-                _log.Debug($"Leader zone is empty, cannot find portal.");
                 _currentPortal = null;
                 return null;
             }
-
-            _log.Debug($"Leader in different zone: '{leaderZone}'. Searching for portal...");
 
             var portal = FindPortalToZone(leaderZone);
             if (portal == null || !portal.IsValid)
             {
                 _currentPortal = null;
-                _log.Warn($"No valid portal found to zone '{leaderZone}'.");
                 return null;
             }
 
@@ -280,13 +270,11 @@ namespace FollowBotV2.Services
             var posComp = portal.GetComponent<Positioned>();
             if (posComp == null)
             {
-                _log.Warn("Portal has no Positioned component.");
                 _currentPortal = null;
                 return null;
             }
 
             var gridPos = new Vector2i((int)posComp.GridPosNum.X, (int)posComp.GridPosNum.Y);
-            _log.Info($"Found portal to '{leaderZone}' at ({gridPos.X}, {gridPos.Y})");
             return gridPos;
         }
 
@@ -327,7 +315,6 @@ namespace FollowBotV2.Services
                     screenPos.Y + windowRect.Location.Y
                 );
 
-                _log.Info($"Clicking portal at screen ({targetScreen.X:F0}, {targetScreen.Y:F0}) attempt {_clickAttempts + 1}/{MAX_CLICK_ATTEMPTS}");
                 _mouseService.MoveCursorSmooth(new MouseVector2(targetScreen.X, targetScreen.Y), 10);
                 Thread.Sleep(100);
                 _mouseService.LeftClick();
@@ -350,7 +337,6 @@ namespace FollowBotV2.Services
             _lastTransitionClickTime = DateTime.MinValue;
         }
 
-        // Приватные методы
         private Entity FindPortalToZone(string targetZone)
         {
             try

@@ -88,16 +88,13 @@ namespace FollowBotV2.Services
                 if (_settings.ImGui.ClearTriggerableBlockades?.Value == true)
                 {
                     _walkabilityData = ingameData.GetClearedPathfindingData();
-                    _log.Debug("Loaded cleared walkability data (doors removed).");
                 }
                 else
                 {
                     _walkabilityData = ingameData.RawPathfindingData;
-                    _log.Debug("Loaded raw walkability data.");
                 }
 
                 _areaDimensions = ingameData.AreaDimensions;
-                _log.Info($"Walkability data loaded: {_areaDimensions?.X}x{_areaDimensions?.Y}");
             }
             catch (Exception ex)
             {
@@ -114,10 +111,7 @@ namespace FollowBotV2.Services
             }
 
             if (!_forceRebuild && _currentTarget.HasValue && _currentTarget.Value.Equals(target))
-            {
-                _log.Debug($"Target unchanged: ({target.X}, {target.Y}), skipping.");
                 return;
-            }
 
             _currentTarget = target;
             _forceRebuild = false;
@@ -155,7 +149,6 @@ namespace FollowBotV2.Services
                 }
             }
 
-            _log.Info($"Building path from ({start.X}, {start.Y}) to ({adjustedTarget.X}, {adjustedTarget.Y})");
             _isPathfinding = true;
             _lastPathBuildTime = DateTime.Now;
             _ = BuildPathAsync(start, adjustedTarget);
@@ -201,7 +194,6 @@ namespace FollowBotV2.Services
             _currentPathIndex = 0;
             _currentTarget = null;
             StopMovement();
-            _log.Debug("Navigation stopped.");
         }
 
         public void Update()
@@ -218,7 +210,6 @@ namespace FollowBotV2.Services
                 {
                     _currentPath.Clear();
                     _currentPathIndex = 0;
-                    _log.Debug("Cleared path (close to target)");
                 }
                 StopMovementOnly();
                 return;
@@ -265,15 +256,8 @@ namespace FollowBotV2.Services
                         if (_currentTarget.HasValue)
                         {
                             float distToTargetAfterPath = Distance(currentGrid, _currentTarget.Value);
-                            if (distToTargetAfterPath <= (_settings.ImGui.StopDistance?.Value ?? 23))
+                            if (distToTargetAfterPath > (_settings.ImGui.StopDistance?.Value ?? 23))
                             {
-                                _log.Debug("Reached target, stopping.");
-                                StopMovement();
-                                return;
-                            }
-                            else
-                            {
-                                _log.Debug($"End of path but target far ({distToTargetAfterPath:F0}), rebuilding.");
                                 MoveTo(_currentTarget.Value);
                                 return;
                             }
@@ -493,18 +477,16 @@ namespace FollowBotV2.Services
                 {
                     _currentPath = path;
                     _currentPathIndex = 0;
-                    _log.Info($"Path found: {path.Count} waypoints.");
                 }
                 else
                 {
                     _currentPath.Clear();
                     _currentPathIndex = 0;
-                    _log.Warn($"Path not found or too short. Start=({start.X},{start.Y}) Target=({target.X},{target.Y})");
+                    _log.Warn($"Path not found from ({start.X},{start.Y}) to ({target.X},{target.Y})");
                 }
             }
             catch (OperationCanceledException)
             {
-                _log.Debug("Pathfinding was cancelled.");
                 _isPathfinding = false;
             }
             catch (Exception ex)

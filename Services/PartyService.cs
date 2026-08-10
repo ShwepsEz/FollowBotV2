@@ -23,7 +23,6 @@ namespace FollowBotV2.Services
         {
             if (string.IsNullOrEmpty(playerName)) return null;
 
-            // Очищаем имя от символов после #
             string cleanName = playerName.Contains('#')
                 ? playerName.Substring(0, playerName.IndexOf('#'))
                 : playerName;
@@ -61,7 +60,6 @@ namespace FollowBotV2.Services
                         if (positioned != null)
                         {
                             var gridPos = new Vector2i((int)positioned.GridPosNum.X, (int)positioned.GridPosNum.Y);
-                            _log.Debug($"Found leader '{cleanName}' at grid ({gridPos.X}, {gridPos.Y})");
                             return gridPos;
                         }
                     }
@@ -72,7 +70,6 @@ namespace FollowBotV2.Services
                 _log.Error($"Error getting player position: {ex.Message}");
             }
 
-            _log.Debug($"Player '{cleanName}' not found in current zone");
             return null;
         }
 
@@ -80,11 +77,9 @@ namespace FollowBotV2.Services
         {
             if (string.IsNullOrEmpty(playerName)) return false;
 
-            // Если есть позиция — значит в той же зоне
             var pos = GetPlayerGridPosition(playerName);
             if (pos.HasValue) return true;
 
-            // Альтернатива: проверить через PartyElement
             try
             {
                 var partyElement = _gameContext.IngameState?.IngameUi?.PartyElement;
@@ -109,10 +104,7 @@ namespace FollowBotV2.Services
 
                     if (cleanPartyName.Equals(cleanName, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Если ZoneName пустой — значит в той же зоне
-                        bool sameZone = string.IsNullOrEmpty(player.ZoneName);
-                        _log.Debug($"Player '{cleanName}' zone check: {(sameZone ? "Same zone" : player.ZoneName)}");
-                        return sameZone;
+                        return string.IsNullOrEmpty(player.ZoneName);
                     }
                 }
             }
@@ -152,7 +144,6 @@ namespace FollowBotV2.Services
 
                     if (cleanPartyName.Equals(cleanLeaderName, StringComparison.OrdinalIgnoreCase))
                     {
-                        _log.Debug($"Leader '{cleanLeaderName}' found in party");
                         return true;
                     }
                 }

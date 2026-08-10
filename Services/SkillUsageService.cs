@@ -147,7 +147,7 @@ namespace FollowBotV2.Services
                     return timeLeft <= 0.5f;
 
                 case UseCondition.NearbyEnemies:
-                    int enemyCount = GetNearbyEnemyCount(settings.NearbyEnemyRadius);
+                    int enemyCount = GetNearbyEnemyCount(settings.EnemySearchRadius);
                     return enemyCount >= settings.NearbyEnemyThreshold;
 
                 case UseCondition.ValourThreshold:
@@ -176,7 +176,7 @@ namespace FollowBotV2.Services
                     return SharpDX.Vector2.Zero;
 
                 case SkillTarget.Enemy:
-                    return GetNearestEnemyPosition();
+                    return GetNearestEnemyPosition(settings.EnemySearchRadius);
 
                 case SkillTarget.Mouse:
                     var mousePos = _mouseService.GetCursorPosition();
@@ -202,7 +202,8 @@ namespace FollowBotV2.Services
             {
                 if (skillInfo.Key == Keys.None) return;
 
-                if (target == SkillTarget.Leader && targetPos != SharpDX.Vector2.Zero)
+                // ★★★ Перемещаем мышь для целей Enemy и Leader ★★★
+                if ((target == SkillTarget.Enemy || target == SkillTarget.Leader) && targetPos != SharpDX.Vector2.Zero)
                 {
                     var worldPos = GridToWorld(targetPos);
                     var camera = _gameContext.GameController?.Game?.IngameState?.Camera;
@@ -287,7 +288,7 @@ namespace FollowBotV2.Services
             catch { return 0; }
         }
 
-        private SharpDX.Vector2? GetNearestEnemyPosition()
+        private SharpDX.Vector2? GetNearestEnemyPosition(int radius)
         {
             try
             {
@@ -305,7 +306,7 @@ namespace FollowBotV2.Services
                     var ePos = new SharpDX.Vector2(e.GridPosNum.X, e.GridPosNum.Y);
                     var playerVec = new SharpDX.Vector2(playerPos.Value.X, playerPos.Value.Y);
                     var dist = SharpDX.Vector2.Distance(ePos, playerVec);
-                    if (dist < minDist)
+                    if (dist < minDist && dist <= radius)
                     {
                         minDist = dist;
                         nearest = ePos;
