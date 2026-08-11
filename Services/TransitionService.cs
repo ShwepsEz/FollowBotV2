@@ -30,8 +30,8 @@ namespace FollowBotV2.Services
 
         private DateTime _lastTransitionClickTime = DateTime.MinValue;
         private int _transitionClickAttempts = 0;
-        private const int MAX_TRANSITION_CLICK_ATTEMPTS = 15;
-        private const int TRANSITION_CLICK_RETRY_INTERVAL_MS = 250;
+        private const int MAX_TRANSITION_CLICK_ATTEMPTS = 10;
+        private const int TRANSITION_CLICK_RETRY_INTERVAL_MS = 500;
 
         private Entity _currentPortal = null;
         private DateTime _lastClickTime = DateTime.MinValue;
@@ -112,11 +112,11 @@ namespace FollowBotV2.Services
 
             try
             {
-                var worldPos = GridToWorld(transitionPosition);
+                var worldPos = GridToWorld3D(transitionPosition);
                 var camera = _gameContext.GameController.Game.IngameState.Camera;
                 if (camera == null) return;
 
-                var screenPos = camera.WorldToScreen(new SharpDX.Vector3(worldPos.X, worldPos.Y, 0));
+                var screenPos = camera.WorldToScreen(worldPos);
                 if (screenPos == SharpDX.Vector2.Zero) return;
 
                 var windowRect = _gameContext.GameController.Window.GetWindowRectangle();
@@ -176,8 +176,8 @@ namespace FollowBotV2.Services
                 if (posComp == null) continue;
 
                 var gridPos = new Vector2i((int)posComp.GridPosNum.X, (int)posComp.GridPosNum.Y);
-                var worldPos = GridToWorld(gridPos);
-                var screenPos = camera.WorldToScreen(new SharpDX.Vector3(worldPos.X, worldPos.Y, 0));
+                var worldPos = GridToWorld3D(gridPos);
+                var screenPos = camera.WorldToScreen(worldPos);
 
                 if (screenPos == SharpDX.Vector2.Zero || screenPos.X <= 0 || screenPos.Y <= 0)
                     continue;
@@ -301,11 +301,11 @@ namespace FollowBotV2.Services
 
             try
             {
-                var worldPos = GridToWorld(portalPosition);
+                var worldPos = GridToWorld3D(portalPosition);
                 var camera = _gameContext.GameController.Game.IngameState.Camera;
                 if (camera == null) return;
 
-                var screenPos = camera.WorldToScreen(new SharpDX.Vector3(worldPos.X, worldPos.Y, 0));
+                var screenPos = camera.WorldToScreen(worldPos);
                 if (screenPos == SharpDX.Vector2.Zero) return;
 
                 var windowRect = _gameContext.GameController.Window.GetWindowRectangle();
@@ -336,6 +336,10 @@ namespace FollowBotV2.Services
             _transitionClickAttempts = 0;
             _lastTransitionClickTime = DateTime.MinValue;
         }
+
+        // ============================================================
+        // ПРИВАТНЫЕ МЕТОДЫ
+        // ============================================================
 
         private Entity FindPortalToZone(string targetZone)
         {
@@ -389,10 +393,15 @@ namespace FollowBotV2.Services
             return "";
         }
 
-        private SharpDX.Vector2 GridToWorld(Vector2i gridPos)
+        // ★★★ Исправленный метод с преобразованием типов ★★★
+        private SharpDX.Vector3 GridToWorld3D(Vector2i gridPos)
         {
-            const float multiplier = 250f / 23f;
-            return new SharpDX.Vector2(gridPos.X * multiplier, gridPos.Y * multiplier);
+            var gc = _gameContext.GameController;
+            if (gc == null) return SharpDX.Vector3.Zero;
+            var sharpVec = new SharpDX.Vector2(gridPos.X, gridPos.Y);
+            var numVec = new System.Numerics.Vector2(sharpVec.X, sharpVec.Y);
+            var result = gc.IngameState.Data.ToWorldWithTerrainHeight(numVec);
+            return new SharpDX.Vector3(result.X, result.Y, result.Z);
         }
 
         private float Distance(Vector2i a, Vector2i b)

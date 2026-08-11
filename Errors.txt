@@ -1,2 +1,2 @@
 Build failed:
-[10.08.2026 15:02:31, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\SkillUsageService.cs(150, 67)] CS1061: "SkillSettings" не содержит определения "NearbyEnemyRadius", и не удалось найти доступный метод расширения "NearbyEnemyRadius", принимающий тип "SkillSettings" в качестве первого аргумента (возможно, пропущена директива using или ссылка на сборку).
+[11.08.2026 9:59:52, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\TransitionService.cs(403, 20)] CS0029: Не удается неявно преобразовать тип "System.Numerics.Vector3" в "SharpDX.Vector3".

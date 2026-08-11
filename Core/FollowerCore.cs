@@ -142,7 +142,6 @@ namespace FollowBotV2.Core
             if (_state == FollowerState.Cooldown && DateTime.Now >= _cooldownUntil)
             {
                 SetState(FollowerState.Following);
-                _log.Debug("Cooldown expired, resuming following.");
             }
 
             // Если кулдаун ещё активен — ничего не делаем
@@ -161,7 +160,6 @@ namespace FollowBotV2.Core
                     _log.Info($"Leader '{leaderName}' left party.");
                     _lastLeaderFound = false;
                 }
-                // Не сбрасываем состояние, просто останавливаем движение
                 _navigationService?.Stop();
                 return;
             }
@@ -273,9 +271,9 @@ namespace FollowBotV2.Core
             var transitionPos = _transitionService.GetNearestTransitionTarget();
             if (!transitionPos.HasValue)
             {
-                _log.Warn("No transition found, stopping.");
+                _log.Warn("No transition found, will retry.");
                 _navigationService?.Stop();
-                SetState(FollowerState.Stopped);
+                SetState(FollowerState.Following); // ← не останавливаем, а пробуем снова
                 return;
             }
 
@@ -311,9 +309,9 @@ namespace FollowBotV2.Core
             var portalPos = _transitionService.GetPortalTarget(leaderName);
             if (!portalPos.HasValue)
             {
-                _log.Warn("Portal not found, stopping.");
+                _log.Warn("Portal not found, will retry.");
                 _navigationService?.Stop();
-                SetState(FollowerState.Stopped);
+                SetState(FollowerState.Following); // ← не останавливаем, а пробуем снова
                 return;
             }
 

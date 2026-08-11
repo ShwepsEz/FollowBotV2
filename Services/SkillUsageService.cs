@@ -219,7 +219,7 @@ namespace FollowBotV2.Services
                 // Наведение мыши для Leader и Enemy
                 if ((target == SkillTarget.Leader || target == SkillTarget.Enemy) && targetPos != SharpDX.Vector2.Zero)
                 {
-                    var worldPos = GridToWorld(targetPos);
+                    var worldPos = GridToWorld3D(targetPos);
                     var camera = _gameContext.GameController?.Game?.IngameState?.Camera;
                     if (camera != null)
                     {
@@ -482,10 +482,14 @@ namespace FollowBotV2.Services
             }
         }
 
-        private SharpDX.Vector3 GridToWorld(SharpDX.Vector2 gridPos)
+        // ★★★ Исправленный метод с преобразованием типов ★★★
+        private SharpDX.Vector3 GridToWorld3D(SharpDX.Vector2 gridPos)
         {
-            const float multiplier = 250f / 23f;
-            return new SharpDX.Vector3(gridPos.X * multiplier, gridPos.Y * multiplier, 0);
+            var gc = _gameContext.GameController;
+            if (gc == null) return SharpDX.Vector3.Zero;
+            var numVec = new System.Numerics.Vector2(gridPos.X, gridPos.Y);
+            var result = gc.IngameState.Data.ToWorldWithTerrainHeight(numVec);
+            return new SharpDX.Vector3(result.X, result.Y, result.Z);
         }
     }
 }
