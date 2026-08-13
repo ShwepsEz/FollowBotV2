@@ -1,2 +1,2 @@
 Build failed:
-[11.08.2026 9:59:52, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\TransitionService.cs(403, 20)] CS0029: Не удается неявно преобразовать тип "System.Numerics.Vector3" в "SharpDX.Vector3".
+[14.08.2026 0:57:48, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\UltimatumService.cs(193, 35)] CS0246: Не удалось найти тип или имя пространства имен "Element" (возможно, отсутствует директива using или ссылка на сборку).

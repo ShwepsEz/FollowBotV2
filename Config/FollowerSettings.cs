@@ -63,6 +63,8 @@ namespace FollowBotV2.Config
         public RangeNode<int> StatusWindowPosY { get; set; } = new RangeNode<int>(100, 0, 1080);
         public Dictionary<int, SkillSettings> SkillSettings { get; set; } = new Dictionary<int, SkillSettings>();
         public ToggleNode DebugSkills { get; set; } = new ToggleNode(false);
+        public ToggleNode EnableUltimatum { get; set; } = new ToggleNode(true);
+        public ToggleNode DebugUltimatum { get; set; } = new ToggleNode(false);
     }
 
     public class FollowerSettings : ISettings

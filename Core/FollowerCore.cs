@@ -32,6 +32,7 @@ namespace FollowBotV2.Core
         private IMouseService _mouseService;
         private ISkillService _skillService;
         private ISkillUsageService _skillUsageService;
+        private IUltimatumService _ultimatumService;
 
         private FollowerState _state = FollowerState.Stopped;
         private DateTime _stateEnterTime = DateTime.Now;
@@ -45,6 +46,7 @@ namespace FollowBotV2.Core
 
         public FollowerState CurrentState => _state;
         public float CooldownRemaining => (_cooldownUntil > DateTime.Now) ? (float)(_cooldownUntil - DateTime.Now).TotalSeconds : 0f;
+        public IUltimatumService UltimatumService => _ultimatumService;
 
         public override bool Initialise()
         {
@@ -76,9 +78,11 @@ namespace FollowBotV2.Core
             _skillUsageService = new SkillUsageService(_gameContext, _log, _skillService, Settings, _inputService, _mouseService, _partyService, this);
             serviceLocator.Register<ISkillUsageService>(_skillUsageService);
 
+            _ultimatumService = new UltimatumService(_gameContext, _log, Settings, _mouseService);
+
             _navigationService.LoadWalkabilityData();
 
-            _imGuiOverlay = new ImGuiOverlay(Settings, _log, _partyService, _gameContext, this, _skillService);
+            _imGuiOverlay = new ImGuiOverlay(Settings, _log, _partyService, _gameContext, this, _skillService, _ultimatumService);
 
             _log.Info("FollowBotV2 initializing...");
             _inputService.RegisterKey(Settings.ImGui.FollowKey.Value);
@@ -90,6 +94,12 @@ namespace FollowBotV2.Core
         public override void Render()
         {
             if (!Settings.Enable.Value) return;
+
+            if (_ultimatumService != null && _ultimatumService.IsPanelOpen)
+            {
+                _ultimatumService.CheckAndHandle();
+                return;
+            }
 
             if (_inputService.PressedOnce(Settings.ImGui.FollowKey.Value))
             {
@@ -132,6 +142,10 @@ namespace FollowBotV2.Core
         private void UpdateFollowing()
         {
             string leaderName = Settings.ImGui.LeaderName.Value;
+
+            if (_ultimatumService != null && _ultimatumService.IsPanelOpen)
+                return;
+
             if (string.IsNullOrEmpty(leaderName))
             {
                 SetState(FollowerState.Stopped);

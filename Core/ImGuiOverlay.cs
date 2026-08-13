@@ -22,13 +22,15 @@ namespace FollowBotV2.Core
         private bool _isDraggingStatusWindow = false;
         private Vector2 _dragStartMouse = Vector2.Zero;
         private Vector2 _dragStartPos = Vector2.Zero;
+        private readonly IUltimatumService _ultimatumService;
 
         private bool _isVisible = false;
         private int _selectedTab = 0;
-        private readonly string[] _tabNames = { "General", "Pathfinding", "Transitions", "Skills" };
+        private readonly string[] _tabNames = { "General", "Pathfinding", "Transitions", "Skills", "Ultimatum" };
 
         public ImGuiOverlay(FollowerSettings settings, ILogService log, IPartyService partyService,
-                            IGameContext gameContext, FollowerCore core, ISkillService skillService)
+                    IGameContext gameContext, FollowerCore core, ISkillService skillService,
+                    IUltimatumService ultimatumService)
         {
             _settings = settings;
             _log = log;
@@ -36,6 +38,7 @@ namespace FollowBotV2.Core
             _gameContext = gameContext;
             _core = core;
             _skillService = skillService;
+            _ultimatumService = ultimatumService;
         }
 
         public bool IsVisible
@@ -112,6 +115,7 @@ namespace FollowBotV2.Core
                 case 1: DrawPathfindingTab(); break;
                 case 2: DrawTransitionsTab(); break;
                 case 3: DrawSkillsTab(); break;
+                case 4: DrawUltimatumTab(); break;
             }
         }
 
@@ -156,6 +160,9 @@ namespace FollowBotV2.Core
             bool lockStatus = _settings.ImGui.LockStatusWindow.Value;
             if (ImGui.Checkbox("Lock Status Window (click-through)", ref lockStatus))
                 _settings.ImGui.LockStatusWindow.Value = lockStatus;
+            bool enableUltimatum = _settings.ImGui.EnableUltimatum.Value;
+            if (ImGui.Checkbox("Enable Ultimatum", ref enableUltimatum))
+                _settings.ImGui.EnableUltimatum.Value = enableUltimatum;
         }
 
         private void DrawPathfindingTab()
@@ -320,6 +327,35 @@ namespace FollowBotV2.Core
                 }
 
                 ImGui.PopID();
+            }
+        }
+
+        private void DrawUltimatumTab()
+        {
+            ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "Ultimatum Settings");
+            ImGui.Separator();
+
+            bool enableUltimatum = _settings.ImGui.EnableUltimatum.Value;
+            if (ImGui.Checkbox("Enable Ultimatum", ref enableUltimatum))
+                _settings.ImGui.EnableUltimatum.Value = enableUltimatum;
+
+            bool debugUltimatum = _settings.ImGui.DebugUltimatum.Value;
+            if (ImGui.Checkbox("Debug Ultimatum", ref debugUltimatum))
+                _settings.ImGui.DebugUltimatum.Value = debugUltimatum;
+
+            ImGui.Separator();
+
+            ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Ultimatum Status:");
+
+            if (_ultimatumService != null)
+            {
+                bool isOpen = _ultimatumService.IsPanelOpen;
+                ImGui.Text($"Panel Open: {isOpen}");
+                ImGui.Text($"Choice Made This Round: {_ultimatumService.ChoiceMadeThisRound}");
+            }
+            else
+            {
+                ImGui.Text("Ultimatum service not available");
             }
         }
 
