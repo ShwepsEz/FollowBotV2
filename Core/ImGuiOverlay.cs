@@ -160,9 +160,6 @@ namespace FollowBotV2.Core
             bool lockStatus = _settings.ImGui.LockStatusWindow.Value;
             if (ImGui.Checkbox("Lock Status Window (click-through)", ref lockStatus))
                 _settings.ImGui.LockStatusWindow.Value = lockStatus;
-            bool enableUltimatum = _settings.ImGui.EnableUltimatum.Value;
-            if (ImGui.Checkbox("Enable Ultimatum", ref enableUltimatum))
-                _settings.ImGui.EnableUltimatum.Value = enableUltimatum;
         }
 
         private void DrawPathfindingTab()
