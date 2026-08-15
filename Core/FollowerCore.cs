@@ -2,6 +2,7 @@ using ExileCore;
 using ExileCore.PoEMemory.MemoryObjects;
 using ExileCore.PoEMemory.Components;
 using System;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using FollowBotV2.Config;
@@ -38,6 +39,16 @@ namespace FollowBotV2.Core
         private DateTime _stateEnterTime = DateTime.Now;
         private DateTime _cooldownUntil = DateTime.MinValue;
         private DateTime _lastLeaderCheck = DateTime.Now;
+
+        private TcpCommandServer _tcpServer;
+        private int _lastTcpPort;
+
+        private TcpClientManager[] _tcpClients;
+        private const int MAX_TCP_CLIENTS = 5;
+
+        // Удалено: private TcpClientManager _tcpClient;
+        private string _lastTcpResponse = "";
+        private DateTime _lastTcpStatusUpdate = DateTime.MinValue;
 
         private string _lastLeaderName = "";
         private bool _lastLeaderFound = false;
@@ -88,33 +99,132 @@ namespace FollowBotV2.Core
             _inputService.RegisterKey(Settings.ImGui.FollowKey.Value);
             _inputService.RegisterKey(Keys.F7);
             _log.Info("FollowBotV2 initialized successfully.");
+            _tcpServer = new TcpCommandServer(this, _log);
+
+            _tcpClients = new TcpClientManager[MAX_TCP_CLIENTS];
+            for (int i = 0; i < MAX_TCP_CLIENTS; i++)
+                _tcpClients[i] = new TcpClientManager(_log);
+            // Удалено: _tcpClient = new TcpClientManager(_log);
+
             return true;
+        }
+
+        public TcpCommandServer GetTcpServer() => _tcpServer;
+        public IPartyService GetPartyService() => _partyService;
+        public string GetLastTcpResponse() => _lastTcpResponse;
+
+        // Удалены методы без индекса:
+        // public async Task<string> SendTcpCommandAsync(string command) ...
+        // public bool IsTcpConnected => ...
+        // public async Task<bool> ConnectTcpAsync(string host, int port) ...
+        // public void DisconnectTcp() ...
+
+        public bool IsTcpConnected(int index) => index >= 0 && index < MAX_TCP_CLIENTS && _tcpClients[index].IsConnected;
+        public async Task<string> SendTcpCommandAsync(int index, string command) => await _tcpClients[index].SendCommandAsync(command);
+        public async Task<bool> ConnectTcpAsync(int index, string host, int port) => await _tcpClients[index].ConnectAsync(host, port);
+        public void DisconnectTcp(int index) => _tcpClients[index].Disconnect();
+        public string GetLastTcpResponse(int index) => _tcpClients[index].LastResponse;
+
+        public async Task BroadcastTcpCommandAsync(string command)
+        {
+            var tasks = new List<Task<string>>();
+            for (int i = 0; i < MAX_TCP_CLIENTS; i++)
+            {
+                if (_tcpClients[i].IsConnected)
+                    tasks.Add(_tcpClients[i].SendCommandAsync(command));
+            }
+            if (tasks.Count == 0)
+                _lastTcpResponse = "No clients connected.";
+            else
+            {
+                var results = await Task.WhenAll(tasks);
+                _lastTcpResponse = string.Join(" | ", results);
+            }
         }
 
         public override void Render()
         {
             if (!Settings.Enable.Value) return;
 
-            // Убираем блок:
-            // if (Settings.ImGui.BotMode.Value == "UltimatumFarm") { ... return; }
+            // --- Обработка клавиш и отрисовка интерфейса (всегда) ---
+            if (_inputService.PressedOnce(Keys.F7))
+            {
+                _imGuiOverlay.ToggleVisibility();
+            }
 
+            // Рисуем интерфейс всегда
+            _imGuiOverlay?.Draw();
+            _imGuiOverlay?.DrawStatusWindow();
+
+            // --- Обработка Ultimatum ---
             if (_ultimatumService != null && _ultimatumService.IsPanelOpen)
             {
                 _ultimatumService.CheckAndHandle();
                 return;
             }
 
+            // --- Управление TCP-сервером (для режимов Follow/UltimatumFarm) ---
+            if (Settings.ImGui.TcpServerEnabled.Value)
+            {
+                if (_tcpServer == null)
+                {
+                    _tcpServer = new TcpCommandServer(this, _log);
+                    _tcpServer.Start(Settings.ImGui.TcpPort.Value);
+                    _lastTcpPort = Settings.ImGui.TcpPort.Value;
+                }
+                else if (!_tcpServer.IsRunning || _lastTcpPort != Settings.ImGui.TcpPort.Value)
+                {
+                    _tcpServer.Stop();
+                    _tcpServer.Start(Settings.ImGui.TcpPort.Value);
+                    _lastTcpPort = Settings.ImGui.TcpPort.Value;
+                }
+            }
+            else
+            {
+                if (_tcpServer != null)
+                {
+                    _tcpServer.Stop();
+                    _tcpServer.Dispose();
+                    _tcpServer = null;
+                }
+            }
+
+            // --- Обработка режима TCPClient ---
+            if (Settings.ImGui.BotMode.Value == "TCPClient")
+            {
+                // Останавливаем любую локальную навигацию
+                if (_state != FollowerState.Stopped)
+                {
+                    _navigationService?.Stop();
+                    SetState(FollowerState.Stopped);
+                }
+                // Обновляем статус с сервера раз в несколько секунд
+                if ((DateTime.Now - _lastTcpStatusUpdate).TotalSeconds > 2)
+                {
+                    _lastTcpStatusUpdate = DateTime.Now;
+                    Task.Run(async () =>
+                    {
+                        var responses = new List<string>();
+                        for (int i = 0; i < MAX_TCP_CLIENTS; i++)
+                        {
+                            if (_tcpClients[i].IsConnected)
+                            {
+                                var resp = await _tcpClients[i].SendCommandAsync("status");
+                                responses.Add($"Slot {i + 1}: {resp}");
+                            }
+                        }
+                        _lastTcpResponse = string.Join("\n", responses);
+                    });
+                }
+                return;
+            }
+
+            // --- Обычный режим (Follow или UltimatumFarm) ---
             if (_inputService.PressedOnce(Settings.ImGui.FollowKey.Value))
             {
                 ToggleFollow();
             }
 
-            if (_inputService.PressedOnce(Keys.F7))
-            {
-                _imGuiOverlay.ToggleVisibility();
-            }
-
-            // ★★★ Проверка режима перенесена в UpdateFollowing ★★★
             if (_state != FollowerState.Stopped)
             {
                 UpdateFollowing();
@@ -131,10 +241,17 @@ namespace FollowBotV2.Core
             }
 
             _skillUsageService?.Update();
+        }
 
-            _imGuiOverlay?.Draw();
-            _imGuiOverlay?.DrawStatusWindow();
-            _skillUsageService?.Update();
+        public override void Dispose()
+        {
+            _tcpServer?.Dispose();
+            if (_tcpClients != null)
+            {
+                foreach (var client in _tcpClients)
+                    client?.Dispose();
+            }
+            base.Dispose();
         }
 
         public void ReloadWalkability()
@@ -147,7 +264,12 @@ namespace FollowBotV2.Core
         {
             string leaderName = Settings.ImGui.LeaderName.Value;
 
-            // Если включён режим UltimatumFarm – останавливаем навигацию
+            if (Settings.ImGui.BotMode.Value == "TCPClient")
+            {
+                _navigationService?.Stop();
+                return;
+            }
+
             if (Settings.ImGui.BotMode.Value == "UltimatumFarm")
             {
                 _navigationService?.Stop();

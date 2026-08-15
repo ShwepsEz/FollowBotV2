@@ -61,9 +61,13 @@ namespace FollowBotV2.Config
         public ToggleNode EnableUltimatum { get; set; } = new ToggleNode(true);
         public ToggleNode DebugUltimatum { get; set; } = new ToggleNode(false);
         public ToggleNode FollowInHideout { get; set; } = new ToggleNode(true);
+        public ToggleNode TcpServerEnabled { get; set; } = new ToggleNode(false);
+        public RangeNode<int> TcpPort { get; set; } = new RangeNode<int>(8080, 1024, 65535);
+        public List<string> SavedServerIPs { get; set; } = new List<string>();
+        public List<string> TcpClientIPs { get; set; } = new List<string> { "", "", "", "", "" };
         public ListNode BotMode { get; set; } = new ListNode
         {
-            Values = new List<string> { "Follow", "UltimatumFarm" },
+            Values = new List<string> { "Follow", "UltimatumFarm", "TCPClient" },
             Value = "Follow"
         };
     }

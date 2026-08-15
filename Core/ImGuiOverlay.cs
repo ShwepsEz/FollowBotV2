@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Windows.Forms;
+using System.Threading.Tasks;
 using ExileCore;
 using FollowBotV2.Config;
 using FollowBotV2.Services;
 using ImGuiNET;
+using System.Linq;
 
 namespace FollowBotV2.Core
 {
@@ -23,6 +25,16 @@ namespace FollowBotV2.Core
         private Vector2 _dragStartMouse = Vector2.Zero;
         private Vector2 _dragStartPos = Vector2.Zero;
         private readonly IUltimatumService _ultimatumService;
+
+        private string _tcpHost = "127.0.0.1";
+        private readonly int[] _tcpPorts = new int[] { 8080, 8081, 8082, 8083, 8084, 8085, 8086, 8087, 8088, 8089 };
+        private string _customCommand = "";
+
+        private int _selectedTcpSlot = 0;
+
+        private List<string> _foundServers = new List<string>();
+        private bool _isScanning = false;
+        private string _selectedServer = null;
 
         private bool _isVisible = false;
         private int _selectedTab = 0;
@@ -136,8 +148,8 @@ namespace FollowBotV2.Core
 
             ImGui.Separator();
 
-            // ★★★ Режимы ★★★
-            string[] modeNames = { "Follow", "UltimatumFarm" };
+            // ★★★ РЕЖИМЫ (добавлен TCPClient) ★★★
+            string[] modeNames = { "Follow", "UltimatumFarm", "TCPClient" };
             int modeIndex = Array.IndexOf(modeNames, _settings.ImGui.BotMode.Value);
             if (modeIndex < 0) modeIndex = 0;
             if (ImGui.Combo("Bot Mode", ref modeIndex, modeNames, modeNames.Length))
@@ -145,25 +157,34 @@ namespace FollowBotV2.Core
             ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Select bot behavior mode");
             ImGui.Separator();
 
-            if (_core.CurrentState == FollowerState.Stopped)
+            // ---- Кнопки Start/Stop и Reload (только не в режиме TCPClient) ----
+            if (_settings.ImGui.BotMode.Value != "TCPClient")
             {
-                if (ImGui.Button("Start Following", new Vector2(120, 30)))
-                    _core.ToggleFollow();
+                if (_core.CurrentState == FollowerState.Stopped)
+                {
+                    if (ImGui.Button("Start Following", new Vector2(120, 30)))
+                        _core.ToggleFollow();
+                }
+                else
+                {
+                    if (ImGui.Button("Stop Following", new Vector2(120, 30)))
+                        _core.ToggleFollow();
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Reload Walkability", new Vector2(150, 30)))
+                    _core.ReloadWalkability();
+
+                bool followInHideout = _settings.ImGui.FollowInHideout.Value;
+                if (ImGui.Checkbox("Follow in Hideout", ref followInHideout))
+                    _settings.ImGui.FollowInHideout.Value = followInHideout;
+                ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f),
+                    "If disabled, bot will stand still in hideout until leader leaves via portal");
             }
             else
             {
-                if (ImGui.Button("Stop Following", new Vector2(120, 30)))
-                    _core.ToggleFollow();
+                ImGui.TextColored(new Vector4(0.8f, 1f, 0.8f, 1f), "Remote control mode");
+                ImGui.Text("Connect to a TCP server to control the bot.");
             }
-            ImGui.SameLine();
-            if (ImGui.Button("Reload Walkability", new Vector2(150, 30)))
-                _core.ReloadWalkability();
-
-            bool followInHideout = _settings.ImGui.FollowInHideout.Value;
-            if (ImGui.Checkbox("Follow in Hideout", ref followInHideout))
-                _settings.ImGui.FollowInHideout.Value = followInHideout;
-            ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f),
-                "If disabled, bot will stand still in hideout until leader leaves via portal");
 
             ImGui.Separator();
             ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "Status Window");
@@ -173,6 +194,264 @@ namespace FollowBotV2.Core
             bool lockStatus = _settings.ImGui.LockStatusWindow.Value;
             if (ImGui.Checkbox("Lock Status Window (click-through)", ref lockStatus))
                 _settings.ImGui.LockStatusWindow.Value = lockStatus;
+
+            // ★★★★★ СЕКЦИЯ TCP-СЕРВЕР (только не в режиме TCPClient) ★★★★★
+            if (_settings.ImGui.BotMode.Value != "TCPClient")
+            {
+                ImGui.Separator();
+                ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "TCP Command Server");
+                bool tcpEnabled = _settings.ImGui.TcpServerEnabled.Value;
+                if (ImGui.Checkbox("Enable TCP Server", ref tcpEnabled))
+                    _settings.ImGui.TcpServerEnabled.Value = tcpEnabled;
+
+                if (tcpEnabled)
+                {
+                    ImGui.Indent();
+                    int portIndex = Array.IndexOf(_tcpPorts, _settings.ImGui.TcpPort.Value);
+                    if (portIndex < 0) portIndex = 0;
+                    if (ImGui.Combo("Port", ref portIndex, _tcpPorts.Select(p => p.ToString()).ToArray(), _tcpPorts.Length))
+                        _settings.ImGui.TcpPort.Value = _tcpPorts[portIndex];
+
+                    bool isRunning = _core.GetTcpServer()?.IsRunning ?? false;
+                    ImGui.TextColored(isRunning ? new Vector4(0, 1, 0, 1) : new Vector4(1, 0, 0, 1),
+                        $"Status: {(isRunning ? "Running" : "Stopped")}");
+
+                    try
+                    {
+                        var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+                        ImGui.Text("Local IPs:");
+                        foreach (var ip in host.AddressList)
+                        {
+                            if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                                ImGui.Text($"  {ip}:{_settings.ImGui.TcpPort.Value}");
+                        }
+                    }
+                    catch { }
+
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Commands: start, stop, status, setleader <name>, setmode <follow|ultimatumfarm>, reload, help");
+                    ImGui.Unindent();
+                }
+            }
+
+            // ★★★★★ СЕКЦИЯ TCP CLIENT (только в режиме TCPClient) ★★★★★
+            if (_settings.ImGui.BotMode.Value == "TCPClient")
+            {
+                ImGui.Separator();
+                ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "TCP Client Control");
+                ImGui.Indent();
+
+                // ---- Сохранённые серверы ----
+                if (_settings.ImGui.SavedServerIPs.Count > 0)
+                {
+                    ImGui.Text("Saved servers:");
+                    if (ImGui.BeginCombo("##savedServers", _selectedServer ?? "Select from saved"))
+                    {
+                        foreach (var ip in _settings.ImGui.SavedServerIPs)
+                        {
+                            bool isSelected = (_selectedServer == ip);
+                            if (ImGui.Selectable(ip, isSelected))
+                            {
+                                _selectedServer = ip;
+                                if (_selectedTcpSlot >= 0 && _selectedTcpSlot < 5)
+                                {
+                                    _settings.ImGui.TcpClientIPs[_selectedTcpSlot] = ip;
+                                    _tcpHost = ip;
+                                }
+                            }
+                            if (isSelected) ImGui.SetItemDefaultFocus();
+                        }
+                        ImGui.EndCombo();
+                    }
+                    ImGui.SameLine();
+                    if (ImGui.Button("Remove selected", new Vector2(120, 30)) && !string.IsNullOrEmpty(_selectedServer))
+                    {
+                        _settings.ImGui.SavedServerIPs.Remove(_selectedServer);
+                        _selectedServer = null;
+                    }
+                }
+
+                // ---- Выбор порта и кнопка сканирования ----
+                ImGui.Text("Port:");
+                ImGui.SameLine();
+                int portIndex = Array.IndexOf(_tcpPorts, _settings.ImGui.TcpPort.Value);
+                if (portIndex < 0) portIndex = 0;
+                if (ImGui.Combo("Port", ref portIndex, _tcpPorts.Select(p => p.ToString()).ToArray(), _tcpPorts.Length))
+                    _settings.ImGui.TcpPort.Value = _tcpPorts[portIndex];
+
+                ImGui.SameLine();
+                if (ImGui.Button("Scan Servers", new Vector2(120, 30)))
+                {
+                    _isScanning = true;
+                    _foundServers.Clear();
+                    _selectedServer = null;
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var servers = await ServerDiscovery.ScanLocalNetworkAsync(_settings.ImGui.TcpPort.Value, 50);
+                            // ★★★ БЕЗ ФИЛЬТРАЦИИ — сохраняем все найденные IP ★★★
+                            _foundServers = servers;
+                            _isScanning = false;
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error($"Scan error: {ex.Message}");
+                            _isScanning = false;
+                        }
+                    });
+                }
+                if (_isScanning)
+                {
+                    ImGui.TextColored(new Vector4(1, 1, 0, 1), "Scanning...");
+                }
+                else if (_foundServers.Count > 0)
+                {
+                    ImGui.TextColored(new Vector4(0, 1, 0, 1), $"Found {_foundServers.Count} server(s)");
+                }
+                else
+                {
+                    ImGui.TextColored(new Vector4(1, 1, 0, 1), "No servers found");
+                }
+
+                // ---- Таблица слотов с выпадающим списком вместо кнопки Scan ----
+                if (ImGui.BeginTable("TcpSlots", 5, ImGuiTableFlags.BordersInnerV | ImGuiTableFlags.SizingFixedFit))
+                {
+                    ImGui.TableSetupColumn("Slot", ImGuiTableColumnFlags.WidthFixed, 40);
+                    ImGui.TableSetupColumn("IP", ImGuiTableColumnFlags.WidthStretch);
+                    // ★★★ Ширина колонки Select from scan увеличена до 160 ★★★
+                    ImGui.TableSetupColumn("Select from scan", ImGuiTableColumnFlags.WidthFixed, 160);
+                    ImGui.TableSetupColumn("Status", ImGuiTableColumnFlags.WidthFixed, 60);
+                    ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, 180);
+                    ImGui.TableHeadersRow();
+
+                    for (int i = 0; i < 5; i++)
+                    {
+                        ImGui.TableNextRow();
+                        ImGui.TableSetColumnIndex(0);
+                        ImGui.Text($"{i + 1}");
+
+                        ImGui.TableSetColumnIndex(1);
+                        string ip = _settings.ImGui.TcpClientIPs[i] ?? "";
+                        if (ImGui.InputText($"##ip_{i}", ref ip, 64))
+                            _settings.ImGui.TcpClientIPs[i] = ip;
+
+                        ImGui.TableSetColumnIndex(2);
+                        // Выпадающий список с найденными серверами (без фильтрации дублей)
+                        if (_foundServers.Count > 0)
+                        {
+                            string currentIP = _settings.ImGui.TcpClientIPs[i] ?? "";
+                            string preview = string.IsNullOrEmpty(currentIP) ? "Select IP" : currentIP;
+                            if (ImGui.BeginCombo($"##select_{i}", preview))
+                            {
+                                foreach (var server in _foundServers)
+                                {
+                                    bool isSelected = (server == currentIP);
+                                    if (ImGui.Selectable(server, isSelected))
+                                    {
+                                        // ★★★ Без проверки дублей – просто вставляем ★★★
+                                        _settings.ImGui.TcpClientIPs[i] = server;
+                                    }
+                                    if (isSelected) ImGui.SetItemDefaultFocus();
+                                }
+                                ImGui.EndCombo();
+                            }
+                        }
+                        else
+                        {
+                            ImGui.Text("Scan first");
+                        }
+
+                        ImGui.TableSetColumnIndex(3);
+                        bool connected = _core.IsTcpConnected(i);
+                        ImGui.TextColored(connected ? new Vector4(0, 1, 0, 1) : new Vector4(1, 0.3f, 0.3f, 1),
+                            connected ? "Online" : "Offline");
+
+                        ImGui.TableSetColumnIndex(4);
+                        if (!connected)
+                        {
+                            if (ImGui.Button($"Connect##{i}", new Vector2(70, 20)))
+                            {
+                                _ = _core.ConnectTcpAsync(i, _settings.ImGui.TcpClientIPs[i], _settings.ImGui.TcpPort.Value);
+                            }
+                        }
+                        else
+                        {
+                            if (ImGui.Button($"Disconnect##{i}", new Vector2(70, 20)))
+                                _core.DisconnectTcp(i);
+                            ImGui.SameLine();
+                            if (ImGui.Button($"Status##{i}", new Vector2(50, 20)))
+                            {
+                                _ = _core.SendTcpCommandAsync(i, "status");
+                            }
+                            ImGui.SameLine();
+                            if (ImGui.Button($"Start##{i}", new Vector2(45, 20)))
+                                _ = _core.SendTcpCommandAsync(i, "start");
+                            ImGui.SameLine();
+                            if (ImGui.Button($"Stop##{i}", new Vector2(45, 20)))
+                                _ = _core.SendTcpCommandAsync(i, "stop");
+                        }
+                    }
+                    ImGui.EndTable();
+                }
+
+                // ---- Групповые действия ----
+                ImGui.Separator();
+                if (ImGui.Button("Connect All", new Vector2(100, 30)))
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        string ip = _settings.ImGui.TcpClientIPs[i];
+                        if (!string.IsNullOrEmpty(ip))
+                            _ = _core.ConnectTcpAsync(i, ip, _settings.ImGui.TcpPort.Value);
+                    }
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Disconnect All", new Vector2(100, 30)))
+                {
+                    for (int i = 0; i < 5; i++)
+                        _core.DisconnectTcp(i);
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Start All", new Vector2(80, 30)))
+                {
+                    _ = _core.BroadcastTcpCommandAsync("start");
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Stop All", new Vector2(80, 30)))
+                {
+                    _ = _core.BroadcastTcpCommandAsync("stop");
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Status All", new Vector2(90, 30)))
+                {
+                    _ = _core.BroadcastTcpCommandAsync("status");
+                }
+
+                // ---- Последний ответ (общий) ----
+                string lastResponse = _core.GetLastTcpResponse();
+                if (!string.IsNullOrEmpty(lastResponse))
+                {
+                    ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Last response:");
+                    ImGui.TextWrapped(lastResponse);
+                }
+
+                // ---- Кнопка добавления IP в сохранённые (для текущего слота) ----
+                if (_selectedTcpSlot >= 0 && _selectedTcpSlot < 5)
+                {
+                    string currentIP = _settings.ImGui.TcpClientIPs[_selectedTcpSlot];
+                    if (!string.IsNullOrEmpty(currentIP) && !_settings.ImGui.SavedServerIPs.Contains(currentIP))
+                    {
+                        if (ImGui.Button($"Add slot {_selectedTcpSlot + 1} IP to saved", new Vector2(180, 30)))
+                        {
+                            if (_settings.ImGui.SavedServerIPs.Count >= 10)
+                                _settings.ImGui.SavedServerIPs.RemoveAt(0);
+                            _settings.ImGui.SavedServerIPs.Add(currentIP);
+                        }
+                    }
+                }
+
+                ImGui.Unindent();
+            }
         }
 
         private void DrawPathfindingTab()
@@ -405,6 +684,11 @@ namespace FollowBotV2.Core
                 ImGui.Text($"In Party: {(inParty ? "Yes" : "No")}");
 
                 ImGui.Text($"Mode: {_settings.ImGui.BotMode.Value}");
+
+                if (_settings.ImGui.BotMode.Value == "TCPClient")
+                {
+                    ImGui.Text($"TCP: {(_core.IsTcpConnected(0) ? "Connected" : "Disconnected")}");
+                }
 
                 if (inParty)
                 {

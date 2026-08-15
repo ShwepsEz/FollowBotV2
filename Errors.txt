@@ -1,0 +1,2 @@
+Build failed:
+[15.08.2026 17:26:52, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2-master\Core\ImGuiOverlay.cs(461, 14)] CS1513: Требуется "}"
