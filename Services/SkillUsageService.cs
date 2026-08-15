@@ -63,7 +63,6 @@ namespace FollowBotV2.Services
             var player = _gameContext.Player;
             if (player == null) return;
 
-            // Логирование активных баффов (под переключателем DebugSkills)
             if (_settings.ImGui.DebugSkills.Value)
             {
                 if ((DateTime.Now - _lastDebugLog).TotalSeconds >= 1)
@@ -92,7 +91,6 @@ namespace FollowBotV2.Services
             var skills = _skillService.GetSkills();
             if (skills.Count == 0) return;
 
-            // Логирование скилл-бара (под переключателем DebugSkillBar)
             if (_settings.ImGui.DebugSkillBar.Value && (DateTime.Now - _lastSkillBarLog).TotalMilliseconds >= SKILLBAR_LOG_INTERVAL_MS)
             {
                 _lastSkillBarLog = DateTime.Now;
@@ -119,14 +117,12 @@ namespace FollowBotV2.Services
                 if (!CheckConditions(settings, skillInfo))
                     continue;
 
-                // Задержка для баннеров
                 if (IsBannerSkill(skillInfo.Name))
                 {
                     if ((DateTime.Now - _lastBannerUseTime).TotalMilliseconds < BANNER_COOLDOWN_MS)
                         continue;
                 }
 
-                // Задержка для скилов с условием BuffMissing
                 if (settings.Condition == UseCondition.BuffMissing)
                 {
                     if ((DateTime.Now - _lastBuffSkillUseTime).TotalMilliseconds < BUFF_SKILL_COOLDOWN_MS)
@@ -139,7 +135,6 @@ namespace FollowBotV2.Services
 
                 ApplySkill(skillInfo, targetPos ?? SharpDX.Vector2.Zero, settings.Target);
 
-                // Обновляем времена использования
                 if (IsBannerSkill(skillInfo.Name))
                     _lastBannerUseTime = DateTime.Now;
 
@@ -216,7 +211,6 @@ namespace FollowBotV2.Services
             {
                 if (skillInfo.Key == Keys.None) return;
 
-                // Наведение мыши для Leader и Enemy
                 if ((target == SkillTarget.Leader || target == SkillTarget.Enemy) && targetPos != SharpDX.Vector2.Zero)
                 {
                     var worldPos = GridToWorld3D(targetPos);
@@ -482,7 +476,6 @@ namespace FollowBotV2.Services
             }
         }
 
-        // ★★★ Исправленный метод с преобразованием типов ★★★
         private SharpDX.Vector3 GridToWorld3D(SharpDX.Vector2 gridPos)
         {
             var gc = _gameContext.GameController;

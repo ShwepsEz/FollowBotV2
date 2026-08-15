@@ -32,25 +32,20 @@ namespace FollowBotV2.Config
         public int ValourThresholdValue { get; set; } = 105;
     }
 
-    /// <summary>
-    /// Настройки, отображаемые только в ImGui-окне (не в стандартном UI ExileApi).
-    /// Все свойства внутри этого класса не имеют атрибута [Menu],
-    /// поэтому они не будут видны в стандартном интерфейсе.
-    /// </summary>
     public class ImGuiOnlySettings
     {
         public ToggleNode DebugSkillBar { get; set; } = new ToggleNode(false);
         public ToggleNode DrawTransitions { get; set; } = new ToggleNode(false);
-        public RangeNode<float> MaxLookAheadPixels { get; set; } = new RangeNode<float>(350, 100, 600);
-        public RangeNode<float> MinLookAheadPixels { get; set; } = new RangeNode<float>(80, 30, 200);
+        public RangeNode<float> MaxLookAheadPixels { get; set; } = new RangeNode<float>(300, 100, 600);
+        public RangeNode<float> MinLookAheadPixels { get; set; } = new RangeNode<float>(30, 30, 200);
         public RangeNode<float> MaxGridDistance { get; set; } = new RangeNode<float>(200, 50, 500);
-        public RangeNode<float> MinGridDistance { get; set; } = new RangeNode<float>(10, 5, 50);
+        public RangeNode<float> MinGridDistance { get; set; } = new RangeNode<float>(20, 5, 50);
         public ToggleNode UsePortals { get; set; } = new ToggleNode(true);
         public RangeNode<int> PortalClickOffset { get; set; } = new RangeNode<int>(0, -50, 50);
         public ToggleNode DrawPath { get; set; } = new ToggleNode(false);
         public ToggleNode ClearTriggerableBlockades { get; set; } = new ToggleNode(true);
         public HotkeyNode MovementKey { get; set; } = new HotkeyNode(Keys.T);
-        public RangeNode<float> StopDistance { get; set; } = new RangeNode<float>(23, 10, 200);
+        public RangeNode<float> StopDistance { get; set; } = new RangeNode<float>(20, 10, 200);
         public TextNode LeaderName { get; set; } = new TextNode("");
         public HotkeyNode FollowKey { get; set; } = new HotkeyNode(Keys.F3);
         public RangeNode<int> PathBuildTimeoutMs { get; set; } = new RangeNode<int>(1000, 500, 5000);
@@ -65,6 +60,12 @@ namespace FollowBotV2.Config
         public ToggleNode DebugSkills { get; set; } = new ToggleNode(false);
         public ToggleNode EnableUltimatum { get; set; } = new ToggleNode(true);
         public ToggleNode DebugUltimatum { get; set; } = new ToggleNode(false);
+        public ToggleNode FollowInHideout { get; set; } = new ToggleNode(true);
+        public ListNode BotMode { get; set; } = new ListNode
+        {
+            Values = new List<string> { "Follow", "UltimatumFarm" },
+            Value = "Follow"
+        };
     }
 
     public class FollowerSettings : ISettings
@@ -78,13 +79,9 @@ namespace FollowBotV2.Config
         [Menu("Enable")]
         public ToggleNode Enable { get; set; }
 
-        [Menu(" ", "Press F7 to open advanced settings")] // пустое имя, только хинт
+        [Menu(" ", "Press F7 to open advanced settings")]
         public string InfoMessage => "Open ImGui settings with F7";
 
-        /// <summary>
-        /// Все настройки, управляемые через ImGui.
-        /// Доступ: _settings.ImGui.ИмяСвойства
-        /// </summary>
         public ImGuiOnlySettings ImGui { get; set; }
     }
 }

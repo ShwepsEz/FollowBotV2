@@ -1,2 +1,0 @@
-Build failed:
-[14.08.2026 0:57:48, C:\ExileApi-Compiled-329.16\Plugins\Source\FollowBotV2\Services\UltimatumService.cs(193, 35)] CS0246: Не удалось найти тип или имя пространства имен "Element" (возможно, отсутствует директива using или ссылка на сборку).

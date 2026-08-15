@@ -1,13 +1,13 @@
 using ExileCore;
-using FollowBotV2.Core;   // <-- добавить
+using FollowBotV2.Core;
 
 namespace FollowBotV2.Services
 {
     public class LogService : ILogService
     {
-        private readonly FollowerCore _plugin;  // <-- изменить тип
+        private readonly FollowerCore _plugin;
 
-        public LogService(FollowerCore plugin)  // <-- изменить тип параметра
+        public LogService(FollowerCore plugin)
         {
             _plugin = plugin;
         }

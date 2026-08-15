@@ -73,7 +73,6 @@ namespace FollowBotV2.Services
 
                 bool isVisible = panel.IsVisible;
 
-                // Отслеживание открытия панели (переход из невидимого в видимое)
                 if (isVisible && !_wasPanelVisible)
                 {
                     _choiceMadeThisRound = false;
@@ -94,7 +93,6 @@ namespace FollowBotV2.Services
                 var choices = panel.ChoicesElements;
                 int currentChoicesCount = choices?.Count ?? 0;
 
-                // Изменение количества выборов = новая волна
                 if (currentChoicesCount != _lastChoicesCount && currentChoicesCount > 0)
                 {
                     _choiceMadeThisRound = false;
@@ -103,7 +101,6 @@ namespace FollowBotV2.Services
                         _log.Debug($"Ultimatum: choices count changed to {currentChoicesCount}, resetting choiceMadeThisRound");
                 }
 
-                // Проверка: если все LockedVotes == 0, значит новая волна (лидер ещё не выбрал)
                 if (_choiceMadeThisRound && choices != null && choices.Count > 0)
                 {
                     bool allLockedZero = true;
@@ -170,7 +167,6 @@ namespace FollowBotV2.Services
                     return;
                 }
 
-                // Проверяем, выбран ли уже этот вариант (чтобы не кликать дважды)
                 bool isSelected = selectedChoice.IsSelectedChoice;
 
                 if (!isSelected)
@@ -184,7 +180,6 @@ namespace FollowBotV2.Services
                         _log.Debug("Choice already selected, skipping click");
                 }
 
-                // Нажимаем Confirm
                 var confirmButton = panel.ConfirmButton;
                 if (confirmButton != null && confirmButton.IsVisible)
                 {

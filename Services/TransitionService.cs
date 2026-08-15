@@ -337,10 +337,6 @@ namespace FollowBotV2.Services
             _lastTransitionClickTime = DateTime.MinValue;
         }
 
-        // ============================================================
-        // ПРИВАТНЫЕ МЕТОДЫ
-        // ============================================================
-
         private Entity FindPortalToZone(string targetZone)
         {
             try
@@ -393,7 +389,6 @@ namespace FollowBotV2.Services
             return "";
         }
 
-        // ★★★ Исправленный метод с преобразованием типов ★★★
         private SharpDX.Vector3 GridToWorld3D(Vector2i gridPos)
         {
             var gc = _gameContext.GameController;

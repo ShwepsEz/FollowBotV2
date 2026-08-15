@@ -128,14 +128,21 @@ namespace FollowBotV2.Core
             ImGui.SameLine();
             var leaderName = _settings.ImGui.LeaderName.Value;
             if (ImGui.InputText("##LeaderName", ref leaderName, 64))
-            {
                 _settings.ImGui.LeaderName.Value = leaderName;
-            }
 
             ImGui.Text("Follow Key:");
             ImGui.SameLine();
             ImGui.Text(_settings.ImGui.FollowKey.Value.ToString());
 
+            ImGui.Separator();
+
+            // ★★★ Режимы ★★★
+            string[] modeNames = { "Follow", "UltimatumFarm" };
+            int modeIndex = Array.IndexOf(modeNames, _settings.ImGui.BotMode.Value);
+            if (modeIndex < 0) modeIndex = 0;
+            if (ImGui.Combo("Bot Mode", ref modeIndex, modeNames, modeNames.Length))
+                _settings.ImGui.BotMode.Value = modeNames[modeIndex];
+            ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f), "Select bot behavior mode");
             ImGui.Separator();
 
             if (_core.CurrentState == FollowerState.Stopped)
@@ -151,6 +158,12 @@ namespace FollowBotV2.Core
             ImGui.SameLine();
             if (ImGui.Button("Reload Walkability", new Vector2(150, 30)))
                 _core.ReloadWalkability();
+
+            bool followInHideout = _settings.ImGui.FollowInHideout.Value;
+            if (ImGui.Checkbox("Follow in Hideout", ref followInHideout))
+                _settings.ImGui.FollowInHideout.Value = followInHideout;
+            ImGui.TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1f),
+                "If disabled, bot will stand still in hideout until leader leaves via portal");
 
             ImGui.Separator();
             ImGui.TextColored(new Vector4(0.8f, 0.8f, 1.0f, 1.0f), "Status Window");
@@ -366,11 +379,11 @@ namespace FollowBotV2.Core
                 _statusWindowPos = new Vector2(posX, posY);
 
             ImGui.SetNextWindowPos(_statusWindowPos, ImGuiCond.Always);
-            ImGui.SetNextWindowSize(new Vector2(0, 0), ImGuiCond.Always); // авторазмер
+            ImGui.SetNextWindowSize(new Vector2(0, 0), ImGuiCond.Always);
 
             var flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoScrollbar |
                         ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings |
-                        ImGuiWindowFlags.AlwaysAutoResize; // ← авторазмер по содержимому
+                        ImGuiWindowFlags.AlwaysAutoResize;
             if (_settings.ImGui.LockStatusWindow.Value)
                 flags |= ImGuiWindowFlags.NoInputs;
 
@@ -390,6 +403,8 @@ namespace FollowBotV2.Core
 
                 bool inParty = _partyService.IsLeaderInParty(leaderName);
                 ImGui.Text($"In Party: {(inParty ? "Yes" : "No")}");
+
+                ImGui.Text($"Mode: {_settings.ImGui.BotMode.Value}");
 
                 if (inParty)
                 {
@@ -415,7 +430,6 @@ namespace FollowBotV2.Core
 
                 ImGui.Text($"Cooldown: {(_core.CooldownRemaining > 0 ? $"{_core.CooldownRemaining:F1}s" : "None")}");
 
-                // Перетаскивание окна (без изменений)
                 if (!_settings.ImGui.LockStatusWindow.Value)
                 {
                     if (ImGui.IsWindowHovered() && ImGui.IsMouseDown(0))

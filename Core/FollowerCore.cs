@@ -95,6 +95,9 @@ namespace FollowBotV2.Core
         {
             if (!Settings.Enable.Value) return;
 
+            // Убираем блок:
+            // if (Settings.ImGui.BotMode.Value == "UltimatumFarm") { ... return; }
+
             if (_ultimatumService != null && _ultimatumService.IsPanelOpen)
             {
                 _ultimatumService.CheckAndHandle();
@@ -111,6 +114,7 @@ namespace FollowBotV2.Core
                 _imGuiOverlay.ToggleVisibility();
             }
 
+            // ★★★ Проверка режима перенесена в UpdateFollowing ★★★
             if (_state != FollowerState.Stopped)
             {
                 UpdateFollowing();
@@ -143,6 +147,13 @@ namespace FollowBotV2.Core
         {
             string leaderName = Settings.ImGui.LeaderName.Value;
 
+            // Если включён режим UltimatumFarm – останавливаем навигацию
+            if (Settings.ImGui.BotMode.Value == "UltimatumFarm")
+            {
+                _navigationService?.Stop();
+                return;
+            }
+
             if (_ultimatumService != null && _ultimatumService.IsPanelOpen)
                 return;
 
@@ -152,16 +163,15 @@ namespace FollowBotV2.Core
                 return;
             }
 
-            // ★★★ Если мы в кулдауне и время вышло — переключаемся обратно в Following ★★★
+            // Обработка кулдауна
             if (_state == FollowerState.Cooldown && DateTime.Now >= _cooldownUntil)
             {
                 SetState(FollowerState.Following);
             }
-
-            // Если кулдаун ещё активен — ничего не делаем
             if (_state == FollowerState.Cooldown)
                 return;
 
+            // Интервал проверки лидера
             if ((DateTime.Now - _lastLeaderCheck).TotalMilliseconds < Settings.ImGui.LeaderCheckIntervalMs.Value)
                 return;
             _lastLeaderCheck = DateTime.Now;
@@ -180,6 +190,23 @@ namespace FollowBotV2.Core
 
             var leaderPos = _partyService.GetPlayerGridPosition(leaderName);
             bool found = leaderPos.HasValue;
+
+            // ★★★ НОВАЯ ПРОВЕРКА: если мы в убежище и опция FollowInHideout выключена,
+            // то бот не двигается за лидером, пока тот находится в той же зоне (убежище).
+            // Если лидер не найден (ушёл на карту) – продолжаем логику к порталу.
+            if (_gameContext.IsInHideout && !Settings.ImGui.FollowInHideout.Value)
+            {
+                if (found)
+                {
+                    // Лидер рядом – стоим на месте
+                    _navigationService?.Stop();
+                    // Если бот был в состоянии движения – ничего не меняем, просто не двигаемся
+                    // (можно оставить состояние Following, но навигация остановлена)
+                    return;
+                }
+                // Если лидер не найден – значит он уже покинул убежище, переходим к порталу
+            }
+
             float stopDist = Settings.ImGui.StopDistance?.Value ?? 23;
             float tolerance = Settings.ImGui.StopDistanceTolerance?.Value ?? 15;
 
@@ -191,6 +218,7 @@ namespace FollowBotV2.Core
             if (playerPos == null) return;
             var currentGrid = new Vector2i((int)playerPos.GridPosNum.X, (int)playerPos.GridPosNum.Y);
 
+            // Если лидер найден и мы уже достаточно близко – останавливаемся
             if (found && Distance(currentGrid, leaderPos.Value) <= stopDist + tolerance)
             {
                 if (_state != FollowerState.Stopped && _state != FollowerState.Following)
@@ -202,6 +230,7 @@ namespace FollowBotV2.Core
                 return;
             }
 
+            // Обработка состояний
             switch (_state)
             {
                 case FollowerState.Stopped:
@@ -218,7 +247,6 @@ namespace FollowBotV2.Core
                 case FollowerState.Portaling:
                     HandlePortalingState(leaderName);
                     break;
-                    // Cooldown уже обработан выше
             }
 
             if (_state == FollowerState.Following || _state == FollowerState.WaitingForPath)
@@ -287,7 +315,7 @@ namespace FollowBotV2.Core
             {
                 _log.Warn("No transition found, will retry.");
                 _navigationService?.Stop();
-                SetState(FollowerState.Following); // ← не останавливаем, а пробуем снова
+                SetState(FollowerState.Following);
                 return;
             }
 
@@ -325,7 +353,7 @@ namespace FollowBotV2.Core
             {
                 _log.Warn("Portal not found, will retry.");
                 _navigationService?.Stop();
-                SetState(FollowerState.Following); // ← не останавливаем, а пробуем снова
+                SetState(FollowerState.Following);
                 return;
             }
 
@@ -384,7 +412,6 @@ namespace FollowBotV2.Core
             _navigationService?.LoadWalkabilityData();
             _navigationService?.Stop();
             _skillService?.RefreshKeybindings();
-            // Если бот был в состоянии Following, продолжаем следовать, иначе оставляем как есть
             if (_state != FollowerState.Stopped)
                 SetState(FollowerState.Following);
         }

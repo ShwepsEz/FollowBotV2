@@ -71,16 +71,13 @@ namespace FollowBotV2.Services
             _ => Keys.None
         };
 
-        /// <summary>
-        /// Преобразует ConsoleKey в Keys без фильтрации мышиных клавиш.
-        /// </summary>
         private static Keys ConsoleKeyToKeys(ConsoleKey consoleKey)
         {
             var intVal = (int)consoleKey;
 
-            if (intVal >= 48 && intVal <= 57) return (Keys)intVal;   // D0-D9
-            if (intVal >= 65 && intVal <= 90) return (Keys)intVal;   // A-Z
-            if (intVal >= 112 && intVal <= 123) return (Keys)intVal; // F1-F12
+            if (intVal >= 48 && intVal <= 57) return (Keys)intVal;
+            if (intVal >= 65 && intVal <= 90) return (Keys)intVal;
+            if (intVal >= 112 && intVal <= 123) return (Keys)intVal;
 
             return consoleKey switch
             {
@@ -103,7 +100,7 @@ namespace FollowBotV2.Services
                 ConsoleKey.OemPeriod => Keys.OemPeriod,
                 ConsoleKey.OemMinus => Keys.OemMinus,
                 ConsoleKey.OemPlus => Keys.Oemplus,
-                _ => (Keys)intVal // fallback
+                _ => (Keys)intVal
             };
         }
 

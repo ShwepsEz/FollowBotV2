@@ -8,7 +8,7 @@ namespace FollowBotV2.Core
     public class SkillInfo
     {
         public string Name { get; set; }
-        public string InternalName { get; set; } // добавлено
+        public string InternalName { get; set; }
         public string IconPath { get; set; }
         public int SlotIndex { get; set; }
         public ActorSkill ActorSkill { get; set; }
